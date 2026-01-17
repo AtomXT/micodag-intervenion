@@ -10,7 +10,7 @@ from utils import ind2mat, skeleton, performance
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 def read_data(idx, iter):
-    path = '../data/SyntheticData/graph' + str(idx)
+    path = f'{current_dir}/../data/SyntheticData/graph' + str(idx)
     environments = [file for file in os.listdir(path) if file.startswith("environment")]
     data = []
     data_i = pd.read_csv(path + f'/observational/data_{iter}.csv', header=None)
@@ -19,8 +19,8 @@ def read_data(idx, iter):
         data_i = pd.read_csv(path+f'/{env}/data_{iter}.csv', header=None)
         data.append(data_i)
     p = data[0].shape[1]
-    moral = pd.read_table(f'../data/SyntheticData/Moral_{p}.txt', header=None, sep=' ')
-    true_dag = pd.read_table(f'../data/SyntheticData/DAG_{p}.txt', header=None, sep=' ')
+    moral = pd.read_table(f'{current_dir}/../data/SyntheticData/Moral_{p}.txt', header=None, sep=' ')
+    true_dag = pd.read_table(f'{current_dir}/../data/SyntheticData/DAG_{p}.txt', header=None, sep=' ')
     with open(path+'/intervention_targets.txt', 'r') as file:
         lines = file.readlines()
     interventions = [list(map(int, line.strip().split(','))) for line in lines]
@@ -86,6 +86,7 @@ def solve(Xs, lam, mu, moral, weights=None):
     model.setObjective(gp.quicksum(weights[e]*(log_term[e]+traces[e]) for e in range(n_env)) + penalty, GRB.MINIMIZE)
     model.params.TimeLimit = 50*m
     model.setParam('MIPGapAbs', lam*m)
+    model.params.Threads = 16
     model.optimize()
 
     return [Gammas[e].X for e in range(n_env)], model.Runtime, model.MIPGap
@@ -124,7 +125,7 @@ for graph in [3]:
                                   columns=['graph', 'iter', 'lam', 'mu', 'rgap', 'TPR', 'FPR',
                                            'd_cpdag', 'time'])
         print(results_df)
-        results_df.to_csv(f"{current_dir}/../experiment_results/micodag_intervention_job2.csv", index=False)
+        results_df.to_csv(f"{current_dir}/../experiment_results/micodag_intervention_job1.csv", index=False)
 
         # np.sum(datas[e].shape[0]/600*(-2*np.sum(np.log(np.diag(gammas[e]))) + np.trace(gammas[e]@gammas[e].T@np.cov(datas[e].T))) for e in range(6))
         # np.sum(datas[e].shape[0]/600*(np.trace(gammas[e]@gammas[e].T@np.cov(datas[e].T))) for e in range(6))
