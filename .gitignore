@@ -5,3 +5,4 @@ __pycache__/
 .Rhistory
 .idea/
 tests/
+experiments/quest_jobs/outlog/
