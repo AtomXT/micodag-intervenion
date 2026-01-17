@@ -125,7 +125,7 @@ for graph in [3]:
                                   columns=['graph', 'iter', 'lam', 'mu', 'rgap', 'TPR', 'FPR',
                                            'd_cpdag', 'time'])
         print(results_df)
-        results_df.to_csv(f"{current_dir}/../experiment_results/micodag_intervention_job1.csv", index=False)
+        results_df.to_csv(f"{current_dir}/../experiment_results/micodag_intervention_job2.csv", index=False)
 
         # np.sum(datas[e].shape[0]/600*(-2*np.sum(np.log(np.diag(gammas[e]))) + np.trace(gammas[e]@gammas[e].T@np.cov(datas[e].T))) for e in range(6))
         # np.sum(datas[e].shape[0]/600*(np.trace(gammas[e]@gammas[e].T@np.cov(datas[e].T))) for e in range(6))
