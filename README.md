@@ -17,27 +17,26 @@ The accompanying write-up frames the method as a mixed-integer programming appro
 
 ## Statistical Model
 
-The project studies multi-environment causal discovery under a linear Gaussian structural equation model. For each environment \(e\) and node \(j\),
+The project studies multi-environment causal discovery under a linear Gaussian structural equation model. For each environment `e` and node `j`:
 
-\[
-X_j^e = \sum_{k=1}^p \beta_{kj}^e X_k^e + \epsilon_j^e,
-\qquad
-\epsilon_j^e \sim \mathcal{N}(0, \nu_j^e).
-\]
+```text
+X_j^e = sum_{k=1}^p beta_{kj}^e X_k^e + epsilon_j^e,
+epsilon_j^e ~ N(0, nu_j^e).
+```
 
-The observational environment plays the role of a baseline DAG, while interventional environments may modify a subset of node mechanisms. In the hard-intervention setting, intervening on node \(j\) removes the effect of its parents in that environment. More generally, the notes also discuss soft interventions and noise interventions.
+The observational environment plays the role of a baseline DAG, while interventional environments may modify a subset of node mechanisms. In the hard-intervention setting, intervening on node `j` removes the effect of its parents in that environment. More generally, the notes also discuss soft interventions and noise interventions.
 
-A useful reparameterization in the write-up is
+A useful reparameterization in the write-up is:
 
-\[
-\Gamma^e = (I - B^e)(D^e)^{1/2},
-\]
+```text
+Gamma^e = (I - B^e)(D^e)^(1/2).
+```
 
-or closely related variants depending on the intervention setting. In this parameterization, the off-diagonal sparsity pattern of \(\Gamma^e\) encodes the DAG structure, while environment-to-environment changes are concentrated in columns corresponding to intervention targets.
+or closely related variants depending on the intervention setting. In this parameterization, the off-diagonal sparsity pattern of `Gamma^e` encodes the DAG structure, while environment-to-environment changes are concentrated in columns corresponding to intervention targets.
 
 ## Formulation at a Glance
 
-For unknown intervention targets, the formulation introduces binary variables \(\delta_j^e\) indicating whether node \(j\) is intervened on in environment \(e\), together with binary edge-support variables for the baseline graph. At a high level, the estimator combines:
+For unknown intervention targets, the formulation introduces binary variables `delta_j^e` indicating whether node `j` is intervened on in environment `e`, together with binary edge-support variables for the baseline graph. At a high level, the estimator combines:
 
 - a weighted Gaussian negative log-likelihood across environments,
 - a sparsity penalty on the baseline DAG,
@@ -45,15 +44,15 @@ For unknown intervention targets, the formulation introduces binary variables \(
 - acyclicity constraints for the baseline graph,
 - and coupling constraints that force each interventional environment to match the baseline except at intervened columns.
 
-In the exact mixed-integer formulation from the older write-up, the key coupling constraints are of the form
+In the exact mixed-integer formulation from the older write-up, the key coupling constraints are of the form:
 
-\[
-\Gamma_{ij}^e = \Gamma_{ij}^{e_0}(1-\delta_j^e), \qquad i \neq j,
-\]
+```text
+Gamma_{ij}^e = Gamma_{ij}^{e_0}(1 - delta_j^e),    i != j.
+```
 
-with a separate diagonal relation allowing the variance term of an intervened node to change. Intuitively, if \(\delta_j^e = 1\), the incoming effects into node \(j\) are cut off in environment \(e\); otherwise that column is shared with the observational model.
+with a separate diagonal relation allowing the variance term of an intervened node to change. Intuitively, if `delta_j^e = 1`, the incoming effects into node `j` are cut off in environment `e`; otherwise that column is shared with the observational model.
 
-The newer notes also sketch a more scalable regularized view: estimate one baseline observational DAG and let interventional environments deviate from it through column-sparse changes, using an \(\ell_0\) penalty for baseline sparsity and a group penalty such as \(\ell_{2,1}\) to encourage only a small number of changed columns. That perspective aligns well with the planned rewrite.
+The newer notes also sketch a more scalable regularized view: estimate one baseline observational DAG and let interventional environments deviate from it through column-sparse changes, using an `l0` penalty for baseline sparsity and a group penalty such as `l2,1` to encourage only a small number of changed columns. That perspective aligns well with the planned rewrite.
 
 ## Method Overview
 
