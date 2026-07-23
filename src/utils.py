@@ -1,3 +1,9 @@
+"""Shared data-loading and graph-evaluation utilities."""
+
+import os
+
+import numpy as np
+import pandas as pd
 
 
 def read_data(idx, iter):
@@ -16,12 +22,6 @@ def read_data(idx, iter):
         lines = file.readlines()
     interventions = [list(map(int, line.strip().split(','))) for line in lines]
     return data, moral, true_dag, interventions
-
-
-import numpy as np
-import pandas as pd
-import os
-
 def read_alpha(m, n, alpha, k):
     """
     Read data for the test on changing level of variance difference.
@@ -55,6 +55,28 @@ def tresh_cov(sigma):
 def mat2ind(mat, p):
     edges = [(i, j) for i in range(p) for j in range(p) if mat[i][j] == 1]
     return edges
+
+
+def cpdag_distance(estimated, truth, threshold=1e-6):
+    """Return the entrywise L1 distance between two CPDAG adjacencies."""
+    estimated = np.asarray(estimated)
+    truth = np.asarray(truth)
+
+    if estimated.shape != truth.shape or estimated.ndim != 2:
+        raise ValueError("estimated and truth must be equally sized matrices")
+    if estimated.shape[0] != estimated.shape[1]:
+        raise ValueError("adjacency matrices must be square")
+    if threshold < 0:
+        raise ValueError("threshold must be nonnegative")
+    if not np.isfinite(estimated).all() or not np.isfinite(truth).all():
+        raise ValueError("adjacency matrices must contain only finite values")
+
+    estimated_edges = (np.abs(estimated) > threshold).astype(int)
+    true_edges = (np.abs(truth) > threshold).astype(int)
+    if np.any(np.diag(estimated_edges)) or np.any(np.diag(true_edges)):
+        raise ValueError("adjacency matrices must have zero diagonals")
+
+    return int(np.abs(estimated_edges - true_edges).sum())
 
 
 def performance(A, Theta):
@@ -152,6 +174,3 @@ def compute_SHD(learned_DAG, True_DAG, SHDs=False):
 if __name__ == '__main__':
     # print(read_B("MICP", "3bowling", "true", 0.1))
     print('Running utils.')
-
-
-

@@ -3,7 +3,7 @@ import causaldag as cd
 # from causaldag.utils.invariance_tests import gauss_invariance_test,
 # gauss_ci_suffstat, gauss_ci_test,
 from causaldag import partial_correlation_suffstat, partial_correlation_test, unknown_target_igsp, gauss_invariance_suffstat, MemoizedInvarianceTester, MemoizedCI_Tester
-from utils import *
+from src.utils import *
 
 import numpy as np
 

@@ -1,6 +1,6 @@
 import gurobipy as gp
 from gurobipy import GRB
-from utils import *
+from src.utils import *
 import time
 import causaldag as cd
 import gnies
@@ -221,7 +221,7 @@ if __name__ == '__main__':
                 # print("intervention targets estimation", estimated_delta)
 
                 # #####################
-                # from utils import *
+                # from src.utils import *
                 # import micodag as mic
                 # # iter = 1
                 # # graph = 1

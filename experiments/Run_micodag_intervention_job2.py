@@ -5,7 +5,7 @@ from gurobipy import nlfunc
 from gurobipy import GRB
 import os
 import causaldag as cd
-from utils import ind2mat, skeleton, performance
+from src.utils import ind2mat, skeleton, performance
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
