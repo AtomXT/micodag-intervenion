@@ -1,6 +1,7 @@
 """Shared data-loading and graph-evaluation utilities."""
 
 import os
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -77,6 +78,40 @@ def cpdag_distance(estimated, truth, threshold=1e-6):
         raise ValueError("adjacency matrices must have zero diagonals")
 
     return int(np.abs(estimated_edges - true_edges).sum())
+
+
+def interventional_cpdag(dag, targets, threshold=1e-6):
+    """Return the I-CPDAG adjacency for a DAG and environment target matrix."""
+    import causaldag as cd
+
+    dag = np.asarray(dag)
+    targets = np.asarray(targets)
+    if dag.ndim != 2 or dag.shape[0] != dag.shape[1]:
+        raise ValueError("dag must be a square adjacency matrix")
+    if targets.ndim != 2 or targets.shape[1] != len(dag):
+        raise ValueError("targets must have shape (environments, variables)")
+
+    graph = cd.DAG.from_amat((np.abs(dag) > threshold).astype(int))
+    target_sets = [set(np.flatnonzero(row)) for row in targets]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        return graph.interventional_cpdag(target_sets, cpdag=graph.cpdag()).to_amat()[0]
+
+
+def compute_errors(gamma, targets, true_dag, true_targets):
+    """Return I-CPDAG distance, target error, skeleton TPR, and skeleton FPR."""
+    estimated_dag = (np.abs(gamma) > 1e-6).astype(int)
+    np.fill_diagonal(estimated_dag, 0)
+    estimated_targets = np.asarray(targets, dtype=int)
+    estimated_skeleton = ((estimated_dag + estimated_dag.T) > 0).astype(int)
+    true_skeleton = ((true_dag + true_dag.T) > 0).astype(int)
+    tp, positives = (estimated_skeleton * true_skeleton).sum(), true_skeleton.sum()
+    d_cpdag = cpdag_distance(
+        interventional_cpdag(estimated_dag, estimated_targets),
+        interventional_cpdag(true_dag, true_targets),
+    )
+    fpr = (estimated_skeleton.sum() - tp) / (true_dag.size - len(true_dag) - positives)
+    return d_cpdag, int(np.abs(estimated_targets - true_targets).sum()), float(tp / positives), float(fpr)
 
 
 def performance(A, Theta):

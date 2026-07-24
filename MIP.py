@@ -7,6 +7,7 @@ import argparse
 from pathlib import Path
 
 import numpy as np
+from src.utils import compute_errors
 
 try:
     import gurobipy as gp
@@ -17,17 +18,14 @@ except ImportError:
 
 def _moments(data):
     """Return arrays, empirical second moments, and sample-size weights."""
-    arrays = [
-        np.asarray(x.values if hasattr(x, "values") else x, dtype=float)
-        for x in data
-    ]
+    arrays = [np.asarray(x.values if hasattr(x, "values") else x, dtype=float) for x in data]
     if not arrays or any(x.ndim != 2 or not np.isfinite(x).all() for x in arrays):
         raise ValueError("data must be a list of finite two-dimensional arrays")
     p = arrays[0].shape[1]
     if any(x.shape[0] == 0 or x.shape[1] != p for x in arrays):
         raise ValueError("all environments must be nonempty and have the same variables")
     n = np.array([len(x) for x in arrays])
-    sigma = [(x.T @ x) / len(x) for x in arrays]
+    sigma = [np.einsum("ni,nj->ij", x, x) / len(x) for x in arrays]
     return arrays, sigma, n / n.sum()
 
 
@@ -44,9 +42,7 @@ def _edges(moral, p):
         a = a[:, :2].astype(int) - 1
     if a.size and (a.min() < 0 or a.max() >= p):
         raise ValueError("moral contains an invalid node label")
-    return {(int(i), int(j)) for i, j in a if i != j} | {
-        (int(j), int(i)) for i, j in a if i != j
-    }
+    return {(int(i), int(j)) for i, j in a if i != j} | {(int(j), int(i)) for i, j in a if i != j}
 
 
 def compute_cost_big_m(sigma, weights, edges, M, lower, upper, lambda_delta):
@@ -164,23 +160,31 @@ def _load(root, graph, iteration):
     paths = sorted(folder.glob("environment*"), key=lambda x: int(x.name[11:]))
     data = [np.loadtxt(folder / "observational" / f"data_{iteration}.csv", delimiter=",")]
     data += [np.loadtxt(x / f"data_{iteration}.csv", delimiter=",") for x in paths]
-    moral = np.loadtxt(root / f"Moral_{data[0].shape[1]}.txt", ndmin=2)
-    return data, moral
+    p = data[0].shape[1]
+    moral = np.loadtxt(root / f"Moral_{p}.txt", ndmin=2)
+    true_dag = np.zeros((p, p), dtype=int)
+    true_dag[tuple((np.loadtxt(root / f"DAG_{p}.txt", dtype=int, ndmin=2) - 1).T)] = 1
+    true_targets = np.zeros((len(paths), p), dtype=int)
+    for e, line in enumerate((folder / "intervention_targets.txt").read_text().splitlines()):
+        true_targets[e, np.fromstring(line, dtype=int, sep=",") - 1] = 1
+    return data, moral, true_dag, true_targets
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--graph", type=int, default=2)
+    parser.add_argument("--graph", type=int, default=1)
     parser.add_argument("--iteration", type=int, default=1)
-    parser.add_argument("--lambda-graph", type=float, default=0.01)
+    parser.add_argument("--lambda-graph", type=float, default=0.05)
     parser.add_argument("--lambda-delta", type=float)
-    parser.add_argument("--time-limit", type=float)
+    parser.add_argument("--time-limit", type=float, default=60)
     args = parser.parse_args()
-    datasets, moral_graph = _load(Path("data/SyntheticData"), args.graph, args.iteration)
+    datasets, moral_graph, true_dag, true_targets = _load(Path("data/SyntheticData"), args.graph, args.iteration)
     result = optimization(
         datasets, moral_graph, args.lambda_graph,
         l_delta=args.lambda_delta, time_limit=args.time_limit,
     )
+    errors = compute_errors(result[0], result[1], true_dag, true_targets)
     print("Gamma:\n", result[0])
     print("Targets:", result[1])
     print("MIP gap, objective, runtime:", result[2:])
+    print("d_cpdag, environment target error, TPR, FPR:", errors)

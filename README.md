@@ -1,159 +1,214 @@
-# Mixed-Integer Programming for Causal Learning with Interventions
+# Mixed-Integer Learning of DAGs with Interventions
 
-This repository contains research code for learning directed acyclic graphs (DAGs) from a mixture of observational and interventional data, including settings where intervention targets are unknown. The codebase combines exact mixed-integer optimization, faster coordinate-descent style approximations, synthetic data generation, baseline comparisons, and experiment runners used to produce the saved results in `experiment_results/`.
+This repository contains research code for learning a directed acyclic graph
+(DAG) from observational and interventional data when the intervention targets
+may be unknown.
 
-The current repository is best understood as a research prototype rather than a polished package. It preserves the original algorithms, datasets, and experiment outputs that motivated an upcoming rewrite.
+The project is being rewritten around the mixed-integer formulation in Equation
+(4.4) of the accompanying dissertation chapter. Earlier coordinate-descent and
+alternating-optimization methods were removed because their performance was
+sensitive to the variable update order. The current proposed method does not
+depend on a supplied variable ordering.
 
-## Project Goal
+## Current Method
 
-The main problem studied here is:
+`MIP.py` is the primary implementation. It estimates:
 
-- infer a causal DAG from multiple environments,
-- use both observational and interventional samples,
-- optionally recover which variables were intervened on,
-- compare exact and approximate optimization strategies against existing baselines.
+- one baseline matrix `Gamma` whose off-diagonal support represents the DAG;
+- binary edge variables and continuous topological-order variables enforcing
+  acyclicity;
+- binary intervention indicators for each non-observational environment; and
+- epigraph variables selecting the intervened or non-intervened cost for each
+  variable and environment.
 
-The accompanying write-up frames the method as a mixed-integer programming approach for causal structure learning with unknown interventions, together with an alternating optimization / coordinate-descent approximation for improved scalability.
-
-## Statistical Model
-
-The project studies multi-environment causal discovery under a linear Gaussian structural equation model. For each environment `e` and node `j`:
-
-```text
-X_j^e = sum_{k=1}^p beta_{kj}^e X_k^e + epsilon_j^e,
-epsilon_j^e ~ N(0, nu_j^e).
-```
-
-The observational environment plays the role of a baseline DAG, while interventional environments may modify a subset of node mechanisms. In the hard-intervention setting, intervening on node `j` removes the effect of its parents in that environment. More generally, the notes also discuss soft interventions and noise interventions.
-
-A useful reparameterization in the write-up is:
+The objective combines the weighted observational likelihood, a DAG sparsity
+penalty, and the optimized interventional costs. Sample-size weights are
+computed as
 
 ```text
-Gamma^e = (I - B^e)(D^e)^(1/2).
+w_e = n_e / sum_e(n_e).
 ```
 
-or closely related variants depending on the intervention setting. In this parameterization, the off-diagonal sparsity pattern of `Gamma^e` encodes the DAG structure, while environment-to-environment changes are concentrated in columns corresponding to intervention targets.
+The implementation accepts unknown, known, or partially known intervention
+targets. It can restrict candidate edges to a supplied moral graph or use the
+complete graph as the superstructure.
 
-## Formulation at a Glance
+The formulation requires bounded `Gamma` entries. In particular, `MIP.py`
+places a positive lower bound on the diagonal of `Gamma`; without this bound,
+no finite big-M constant can cover the logarithmic intervention-selection
+costs. The selector bounds are computed automatically from the empirical
+second-moment matrices and the chosen coefficient bounds.
 
-For unknown intervention targets, the formulation introduces binary variables `delta_j^e` indicating whether node `j` is intervened on in environment `e`, together with binary edge-support variables for the baseline graph. At a high level, the estimator combines:
+## Repository Layout
 
-- a weighted Gaussian negative log-likelihood across environments,
-- a sparsity penalty on the baseline DAG,
-- a penalty on the number of intervened targets,
-- acyclicity constraints for the baseline graph,
-- and coupling constraints that force each interventional environment to match the baseline except at intervened columns.
+| Path | Purpose |
+| --- | --- |
+| `MIP.py` | Current Equation (4.4) implementation and command-line runner |
+| `MIP_naive.py` | Original full joint-environment formulation from Equation (4.2) |
+| `GNIES.py` | GNIES rank baseline using the same synthetic-data defaults |
+| `MICP.py` | Legacy joint-environment formulation, retained for reference |
+| `data/DataGeneration.py` | Python translation of the original R synthetic-data generator |
+| `data/DataGeneration_vary_n.py` | Fixed 20-node graph with `n = 100, 500, 1000` in every environment |
+| `data/DataGeneration.R` | Original data-generation reference |
+| `data/SyntheticData/` | Main synthetic graphs and multi-environment datasets |
+| `data/Vary_n/` | Fixed-graph sample-size experiment |
+| `data/RealData/` | Sachs observational and interventional data |
+| `src/utils.py` | Data-loading and graph-evaluation utilities |
+| `experiment_results/` | Historical estimates, summaries, and plots |
+| `experiments/` and notebooks | Earlier experimental and exploratory code |
 
-In the exact mixed-integer formulation from the older write-up, the key coupling constraints are of the form:
+The old experiment scripts and notebooks have not all been migrated to the new
+formulation. Some still describe or import removed coordinate-descent code and
+should be treated as historical material rather than the current runnable
+pipeline.
 
-```text
-Gamma_{ij}^e = Gamma_{ij}^{e_0}(1 - delta_j^e),    i != j.
+## Installation
+
+The current MIP requires:
+
+- Python;
+- NumPy and `causaldag`;
+- Gurobi and `gurobipy`; and
+- a working Gurobi license.
+
+Using a virtual environment is recommended:
+
+```bash
+python3.9 -m venv /path/to/venvs/python39
+source /path/to/venvs/python39/bin/activate
+brew install libomp
+python -m pip install numpy causaldag gnies gurobipy "pgmpy==0.1.25"
 ```
 
-with a separate diagonal relation allowing the variance term of an intervened node to change. Intuitively, if `delta_j^e = 1`, the incoming effects into node `j` are cut off in environment `e`; otherwise that column is shared with the observational model.
+Install `pandas` as well when using the legacy data-loading utilities:
 
-The newer notes also sketch a more scalable regularized view: estimate one baseline observational DAG and let interventional environments deviate from it through column-sparse changes, using an `l0` penalty for baseline sparsity and a group penalty such as `l2,1` to encourage only a small number of changed columns. That perspective aligns well with the planned rewrite.
+```bash
+python -m pip install pandas
+```
 
-## Method Overview
+The R dependencies are only needed for historical comparison and evaluation
+scripts.
 
-At a high level, the project currently contains:
+The `pgmpy` pin is required when using Python 3.9 because current `pgmpy`
+releases require Python 3.10 or newer.
 
-- an exact mixed-integer optimization approach for joint DAG and intervention-target recovery,
-- a faster alternating optimization / coordinate-descent approximation,
-- synthetic multi-environment benchmarks,
-- comparisons against established causal discovery baselines,
-- and evaluation code for structural and essential-graph recovery.
+## Running the MIP
 
-This description is intentionally high-level because the repository is about to be reorganized and many implementation files will change.
+From the repository root, the following command fits graph 2 (`p = 20`) using
+the first generated dataset:
 
-## Data Included in the Repo
+```bash
+python MIP.py \
+  --graph 2 \
+  --iteration 1 \
+  --lambda-graph 0.01 \
+  --lambda-delta 0.01 \
+  --time-limit 1000
+```
 
-The repository already includes several datasets and generated artifacts:
+The graph index selects the included synthetic datasets:
 
-- `data/SyntheticData/`
-  Synthetic multi-environment benchmark data used by the main experiments.
+| Graph | Variables |
+| ---: | ---: |
+| 1 | 10 |
+| 2 | 20 |
+| 3 | 50 |
+| 4 | 100 |
+| 5 | 200 |
 
-- `data/SyntheticData_preliminary/`
-  Earlier synthetic datasets and graph instances.
+The script reports:
 
-- `data/RealData/`
-  Sachs observational and interventional data, plus processed test cases.
+1. the estimated baseline `Gamma`;
+2. the estimated intervention-target indicator for each environment;
+3. the final MIP gap;
+4. the objective value; and
+5. the solver runtime;
+6. `d_cpdag`, the entrywise distance between the estimated and true I-CPDAGs;
+   and
+7. the environment-by-variable intervention-target Hamming error;
+8. skeleton true-positive rate (TPR); and
+9. skeleton false-positive rate (FPR).
 
-- `experiment_results/`
-  Saved estimated DAGs, estimated intervention targets, timing tables, and plots from previous runs.
+The optimization function can also be imported directly:
 
-## Dependencies
+```python
+from MIP import optimization
 
-### Python
+Gamma, targets, gap, objective, runtime = optimization(
+    data,
+    moral_graph,
+    l=0.01,
+    l_delta=0.01,
+)
+```
 
-The Python scripts expect a scientific Python environment with at least:
+Here, `data[0]` must be the observational sample and the remaining entries must
+be the interventional environments. Each entry may be a NumPy array or pandas
+DataFrame with the same number and ordering of variables.
 
-- `numpy`
-- `pandas`
-- `matplotlib`
-- `causaldag`
-- `gnies`
-- `gurobipy`
+## Running the Naive MIP
 
-The exact optimization code requires:
+`MIP_naive.py` implements Equation (4.2), retaining a separate `Gamma` matrix
+for every environment. It uses the same defaults and output metrics as
+`MIP.py`, but is expected to be substantially larger and slower.
 
-- a working Gurobi installation,
-- an active Gurobi license.
+```bash
+python MIP_naive.py --time-limit 1000
+```
 
-The Quest job scripts under `experiments/quest_jobs/` assume a Python 3.9 Conda environment plus a loaded Gurobi module.
+## Running GNIES Rank
 
-### R
+`GNIES.py` uses the same default dataset as `MIP.py`: graph 2 (`p = 20`) and
+iteration 1. Its default GNIES penalty is 6, matching the earlier rank
+experiments.
 
-The R scripts rely on packages including:
+```bash
+python GNIES.py
+```
 
-- `pcalg`
-- `igraph`
-- `gRbase`
-- `MASS`
-- `glue`
+The runner prints the estimated I-CPDAG, the zero-based union of estimated
+intervention targets, score, runtime, `d_cpdag`, union-target error, and
+skeleton TPR/FPR. GNIES does not return a target indicator for every
+environment-variable pair, so an environment-specific target error is not
+available and should not be compared with the MIP target error.
 
-## Current Usage
+## Synthetic Data
 
-The current codebase is still script-driven and was developed as a research workflow rather than a stable package. Running experiments presently requires invoking the existing Python and R scripts directly, with Gurobi available for the exact optimization routines.
+The main generator reproduces the procedure in `DataGeneration.R`:
 
-As part of the rewrite, this will likely be replaced by a cleaner interface with standardized configuration, entry points, and reproducible environments.
+- ordered random DAGs with edge probability `2 / p`;
+- edge weights sampled from `{-0.8, -0.6, 0.6, 0.8}`;
+- observational noise variances sampled from `{1, 2, 4}`;
+- hard interventions that remove incoming edges at each target;
+- five interventional environments by default; and
+- ten repeated datasets per environment.
 
-## Results and Artifacts
+Review the available generator options before writing new data:
 
-The repository already contains saved experimental outputs from substantial synthetic benchmarking, including estimated graphs, estimated intervention targets, timing summaries, and evaluation plots. These historical artifacts are useful as reference points for validating the rewrite.
+```bash
+python data/DataGeneration.py --help
+python data/DataGeneration_vary_n.py --help
+```
 
-## Important Caveats
+Both generators use relative paths. They refuse to replace a nonempty output
+directory unless `--overwrite` is explicitly supplied.
 
-- This is a research codebase, not a packaged library.
-- Several scripts contain hard-coded file paths or machine-specific assumptions.
-- Some files refer to `./Data/...` while the repository folder is `data/...`. On case-sensitive filesystems, those paths may need to be updated before scripts run successfully.
-- The codebase mixes current implementations with older experiments and exploratory notebooks/scripts.
-- There is no single end-to-end CLI yet; scripts are run directly.
+## Evaluation
 
-## Why This Repository Exists
+`src/utils.py` contains the shared graph metrics. In particular,
+`interventional_cpdag()` constructs an I-CPDAG from a DAG and its
+environment-specific intervention targets. `cpdag_distance()` then computes
+the entrywise L1 difference between the estimated and true I-CPDAG adjacency
+matrices. This project calls that quantity `d_cpdag`; it is intentionally
+different from structural Hamming distance (SHD).
 
-This codebase captures the original implementation behind a larger project on causal learning with interventions:
+## Project Status
 
-- exact mixed-integer formulations for structure learning,
-- scalable coordinate-descent approximations,
-- synthetic-data benchmarking,
-- baseline comparison against GNIES and UT-IGSP,
-- early experiments on real data such as Sachs.
+The data and core method have been cleaned up, but the rewrite is still in
+progress. The next work should focus on:
 
-It is a strong starting point for a rewrite because it already contains:
-
-- the core optimization ideas,
-- the dataset conventions,
-- the experiment definitions,
-- and the historical outputs needed for regression checking.
-
-## Planned Rewrite Direction
-
-If this repository is being used as the starting point for a rewrite, the most natural next steps are:
-
-- separate legacy experiments from the core library,
-- standardize data paths and configuration,
-- package the optimization methods behind a clean API,
-- unify evaluation and result writing,
-- document reproducible environments for Python and R,
-- and add tests around data loading, objective calculations, and graph recovery outputs.
+- validating `MIP.py` through small cases with known optima;
+- writing experiment runners for the new formulation;
+- adding Sachs-data preprocessing and evaluation;
+- defining reproducible penalty-selection rules; and
+- replacing or archiving the remaining legacy scripts and results.
