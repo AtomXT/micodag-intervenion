@@ -8,7 +8,7 @@ import gurobipy as gp
 import numpy as np
 from gurobipy import GRB, nlfunc
 
-from MIP import _edges, _load, _moments, compute_errors
+from MIP import _edges, _load, _moments, compute_errors, estimate_moral_graph
 
 
 def optimization(
@@ -99,14 +99,16 @@ def optimization(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--graph", type=int, default=2)
+    parser.add_argument("--graph", type=int, default=3)
     parser.add_argument("--iteration", type=int, default=6)
     parser.add_argument("--lambda-graph", type=float, default=0.05)
     parser.add_argument("--lambda-delta", type=float)
+    parser.add_argument("--alpha", type=float, default=0.2)
     parser.add_argument("--time-limit", type=float, default=60)
     args = parser.parse_args()
 
-    data, moral, true_dag, true_targets = _load(Path("data/SyntheticData"), args.graph, args.iteration)
+    data, _, true_dag, true_targets = _load(Path("data/SyntheticData"), args.graph, args.iteration)
+    moral = estimate_moral_graph(data[0], args.alpha)
     result = optimization(
         data, moral, args.lambda_graph, l_delta=args.lambda_delta, time_limit=args.time_limit
     )

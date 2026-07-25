@@ -28,9 +28,9 @@ def compute_errors(icpdag, targets, true_dag, true_targets):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--graph", type=int, default=2)
+    parser.add_argument("--graph", type=int, default=3)
     parser.add_argument("--iteration", type=int, default=6)
-    parser.add_argument("--lambda-penalty", type=float, default=6.0)
+    parser.add_argument("--lambda-penalty", type=float, default=8.0)
     args = parser.parse_args()
 
     data, _, true_dag, true_targets = _load(Path("data/SyntheticData"), args.graph, args.iteration)

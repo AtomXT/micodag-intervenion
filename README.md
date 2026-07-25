@@ -29,9 +29,10 @@ computed as
 w_e = n_e / sum_e(n_e).
 ```
 
-The implementation accepts unknown, known, or partially known intervention
-targets. It can restrict candidate edges to a supplied moral graph or use the
-complete graph as the superstructure.
+The command-line runners estimate an undirected superstructure from the
+observational sample using graphical lasso. The only exposed graphical-lasso
+setting is `--alpha` (default `0.2`). The imported optimization functions can
+still accept a supplied superstructure or use the complete graph.
 
 The formulation requires bounded `Gamma` entries. In particular, `MIP.py`
 places a positive lower bound on the diagonal of `Gamma`; without this bound,
@@ -44,6 +45,7 @@ second-moment matrices and the chosen coefficient bounds.
 | Path | Purpose |
 | --- | --- |
 | `MIP.py` | Current Equation (4.4) implementation and command-line runner |
+| `MIP_profiled.py` | Fully profiled parent-set and intervention-pattern MILP |
 | `MIP_naive.py` | Original full joint-environment formulation from Equation (4.2) |
 | `GNIES.py` | GNIES rank baseline using the same synthetic-data defaults |
 | `MICP.py` | Legacy joint-environment formulation, retained for reference |
@@ -77,7 +79,7 @@ Using a virtual environment is recommended:
 python3.9 -m venv /path/to/venvs/python39
 source /path/to/venvs/python39/bin/activate
 brew install libomp
-python -m pip install numpy causaldag gnies gurobipy "pgmpy==0.1.25"
+python -m pip install numpy scikit-learn causaldag gnies gurobipy "pgmpy==0.1.25"
 ```
 
 Install `pandas` as well when using the legacy data-loading utilities:
@@ -145,6 +147,22 @@ Gamma, targets, gap, objective, runtime = optimization(
 Here, `data[0]` must be the observational sample and the remaining entries must
 be the interventional environments. Each entry may be a NumPy array or pandas
 DataFrame with the same number and ordering of variables.
+
+## Running the Fully Profiled MIP
+
+`MIP_profiled.py` profiles out both the environment-specific parameters and
+the remaining baseline `Gamma` column for every candidate parent set. It then
+solves a linear parent-set selection MILP and reconstructs `Gamma` and the
+environment-specific intervention targets from the selected local optima.
+
+```bash
+python MIP_profiled.py --graph 2 --iteration 1
+```
+
+The formulation is exact when its reported local optima lie within the
+specified `Gamma` bounds. The script checks this condition rather than silently
+using an invalid closed-form score. `--max-parents` can restrict the candidate
+parent-set size when the supplied superstructure is dense.
 
 ## Running the Naive MIP
 

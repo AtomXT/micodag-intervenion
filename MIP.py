@@ -7,6 +7,7 @@ import argparse
 from pathlib import Path
 
 import numpy as np
+from sklearn.covariance import GraphicalLasso
 from src.utils import compute_errors
 
 try:
@@ -27,6 +28,29 @@ def _moments(data):
     n = np.array([len(x) for x in arrays])
     sigma = [np.einsum("ni,nj->ij", x, x) / len(x) for x in arrays]
     return arrays, sigma, n / n.sum()
+
+
+def estimate_moral_graph(observational_data, alpha):
+    """Estimate an undirected superstructure from observational data."""
+    x = np.asarray(
+        observational_data.values
+        if hasattr(observational_data, "values")
+        else observational_data,
+        dtype=float,
+    )
+    if x.ndim != 2 or not np.isfinite(x).all() or alpha <= 0:
+        raise ValueError("observational_data must be finite and alpha must be positive")
+    scale = x.std(axis=0)
+    if np.any(scale == 0):
+        raise ValueError("graphical lasso requires nonconstant variables")
+    with np.errstate(divide="ignore", invalid="ignore", over="ignore"):
+        precision = GraphicalLasso(alpha=alpha).fit(
+            (x - x.mean(axis=0)) / scale
+        ).precision_
+    moral = np.abs(precision) > 1e-8
+    moral |= moral.T
+    np.fill_diagonal(moral, False)
+    return moral
 
 
 def _edges(moral, p):
@@ -176,9 +200,11 @@ if __name__ == "__main__":
     parser.add_argument("--iteration", type=int, default=1)
     parser.add_argument("--lambda-graph", type=float, default=0.05)
     parser.add_argument("--lambda-delta", type=float)
+    parser.add_argument("--alpha", type=float, default=0.2)
     parser.add_argument("--time-limit", type=float, default=60)
     args = parser.parse_args()
-    datasets, moral_graph, true_dag, true_targets = _load(Path("data/SyntheticData"), args.graph, args.iteration)
+    datasets, _, true_dag, true_targets = _load(Path("data/SyntheticData"), args.graph, args.iteration)
+    moral_graph = estimate_moral_graph(datasets[0], args.alpha)
     result = optimization(
         datasets, moral_graph, args.lambda_graph,
         l_delta=args.lambda_delta, time_limit=args.time_limit,
