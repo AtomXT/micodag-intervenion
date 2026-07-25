@@ -98,41 +98,68 @@ def interventional_cpdag(dag, targets, threshold=1e-6):
         return graph.interventional_cpdag(target_sets, cpdag=graph.cpdag()).to_amat()[0]
 
 
+def _equivalence_class(pdag, threshold=1e-6):
+    """Return the directed-edge sets of all DAG extensions of a (I-)CPDAG."""
+    import causaldag as cd
+
+    pdag = np.asarray(pdag)
+    if pdag.ndim != 2 or pdag.shape[0] != pdag.shape[1]:
+        raise ValueError("pdag must be a square adjacency matrix")
+    if threshold < 0:
+        raise ValueError("threshold must be nonnegative")
+    if not np.isfinite(pdag).all():
+        raise ValueError("pdag must contain only finite values")
+
+    adjacency = (np.abs(pdag) > threshold).astype(int)
+    if np.any(np.diag(adjacency)):
+        raise ValueError("pdag must have a zero diagonal")
+    dags = cd.PDAG.from_amat(adjacency).all_dags()
+    if not dags:
+        raise ValueError("pdag has no consistent DAG extension")
+    return dags
+
+
+def _max_min_edge_error(first_class, second_class):
+    """Return the max-min proportion of edges in the first DAG but not the second."""
+    maximum = 0.0
+    for first in first_class:
+        if not first:
+            distance = 0.0
+        else:
+            distance = min(len(first - second) / len(first) for second in second_class)
+        maximum = max(maximum, distance)
+    return maximum
+
+
+def equivalence_class_fdp_tdp(estimated_pdag, true_pdag, threshold=1e-6):
+    """Return the equivalence-class FDP and TDP from Taeb et al. (2024).
+
+    The inputs are the estimated and true (interventional) CPDAGs. Their
+    consistent DAG extensions are enumerated, and the nested max-min metrics
+    in Equation (9) of the paper are evaluated on directed edge sets.
+    """
+    estimated_class = _equivalence_class(estimated_pdag, threshold)
+    true_class = _equivalence_class(true_pdag, threshold)
+    fdp = _max_min_edge_error(estimated_class, true_class)
+    false_negative_proportion = _max_min_edge_error(true_class, estimated_class)
+    return float(fdp), float(1.0 - false_negative_proportion)
+
+
 def compute_errors(gamma, targets, true_dag, true_targets):
-    """Return I-CPDAG distance, target error, skeleton TPR, and skeleton FPR."""
+    """Return I-CPDAG distance, target error, class FDP, and class TDP."""
     estimated_dag = (np.abs(gamma) > 1e-6).astype(int)
     np.fill_diagonal(estimated_dag, 0)
     estimated_targets = np.asarray(targets, dtype=int)
-    estimated_skeleton = ((estimated_dag + estimated_dag.T) > 0).astype(int)
-    true_skeleton = ((true_dag + true_dag.T) > 0).astype(int)
-    tp, positives = (estimated_skeleton * true_skeleton).sum(), true_skeleton.sum()
-    d_cpdag = cpdag_distance(
-        interventional_cpdag(estimated_dag, estimated_targets),
-        interventional_cpdag(true_dag, true_targets),
-    )
-    fpr = (estimated_skeleton.sum() - tp) / (true_dag.size - len(true_dag) - positives)
-    return d_cpdag, int(np.abs(estimated_targets - true_targets).sum()), float(tp / positives), float(fpr)
+    true_targets = np.asarray(true_targets, dtype=int)
+    if estimated_targets.shape != true_targets.shape:
+        raise ValueError("estimated and true targets must have the same shape")
 
-
-def performance(A, Theta):
-    """
-    parameters:
-
-    A: The estimated matrix.
-    Theta: The ground truth matrix.
-
-    """
-    A, Theta = np.array(A), np.array(Theta)
-    support_Theta = Theta != 0
-    support_A = A != 0
-    P = np.count_nonzero(support_Theta)
-    p = Theta.shape[0]
-    N = p*(p-1) - P
-    TP = np.count_nonzero(np.multiply(support_Theta, support_A))
-    TPR = TP / P
-    FP = np.count_nonzero(support_A) - TP
-    FPR = FP / N
-    return TPR, FPR
+    estimated_icpdag = interventional_cpdag(estimated_dag, estimated_targets)
+    true_icpdag = interventional_cpdag(true_dag, true_targets)
+    d_cpdag = cpdag_distance(estimated_icpdag, true_icpdag)
+    fdp, tdp = equivalence_class_fdp_tdp(estimated_icpdag, true_icpdag)
+    target_error = int(np.abs(estimated_targets - true_targets).sum())
+    return d_cpdag, target_error, fdp, tdp
 
 
 def find_datasets(file_path):
@@ -149,10 +176,10 @@ def collect_results(results, datasets):
     :param datasets: list of dataset names
     :return:
     """
-    results_eq = pd.DataFrame(results['equal'], columns=['RGAP', 'd_cpdag', 'SHDs', 'TPR', 'FPR', 'Time'])
+    results_eq = pd.DataFrame(results['equal'], columns=['RGAP', 'd_cpdag', 'SHDs', 'FDP', 'TDP', 'Time'])
     results_eq['network'] = datasets
     results_eq = results_eq.set_index('network')
-    results_ineq = pd.DataFrame(results['unequal'], columns=['RGAP', 'd_cpdag', 'SHDs', 'TPR', 'FPR', 'Time'])
+    results_ineq = pd.DataFrame(results['unequal'], columns=['RGAP', 'd_cpdag', 'SHDs', 'FDP', 'TDP', 'Time'])
     results_ineq['network'] = datasets
     results_ineq = results_ineq.set_index('network')
     return results_eq, results_ineq

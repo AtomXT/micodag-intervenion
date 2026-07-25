@@ -213,4 +213,4 @@ if __name__ == "__main__":
     print("Gamma:\n", result[0])
     print("Targets:", result[1])
     print("MIP gap, objective, runtime:", result[2:])
-    print("d_cpdag, environment target error, TPR, FPR:", errors)
+    print("d_cpdag, environment target error, FDP, TDP:", errors)

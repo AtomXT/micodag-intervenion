@@ -128,8 +128,14 @@ The script reports:
 6. `d_cpdag`, the entrywise distance between the estimated and true I-CPDAGs;
    and
 7. the environment-by-variable intervention-target Hamming error;
-8. skeleton true-positive rate (TPR); and
-9. skeleton false-positive rate (FPR).
+8. equivalence-class false discovery proportion (FDP); and
+9. equivalence-class true discovery proportion (TDP), as defined by the
+   nested comparisons over the estimated and true I-MECs in Taeb et al.
+   (2024).
+
+The FDP/TDP calculation is exact: it enumerates the consistent DAG extensions
+of both I-CPDAGs. Its cost can therefore be exponential when either I-CPDAG
+contains many reversible edges.
 
 The optimization function can also be imported directly:
 
@@ -186,7 +192,7 @@ python GNIES.py
 
 The runner prints the estimated I-CPDAG, the zero-based union of estimated
 intervention targets, score, runtime, `d_cpdag`, union-target error, and
-skeleton TPR/FPR. GNIES does not return a target indicator for every
+equivalence-class FDP/TDP. GNIES does not return a target indicator for every
 environment-variable pair, so an environment-specific target error is not
 available and should not be compared with the MIP target error.
 

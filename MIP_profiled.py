@@ -17,7 +17,16 @@ from src.utils import compute_errors
 
 
 def _best_local(
-    j, parents, sigma, weights, l, l_delta, status, coefficient_bound, lower, upper
+    j,
+    parents,
+    sigma,
+    weights,
+    l,
+    delta_penalties,
+    status,
+    coefficient_bound,
+    lower,
+    upper,
 ):
     """Profile Gamma and the intervention pattern for one parent set."""
     environments = len(sigma)
@@ -42,7 +51,8 @@ def _best_local(
         coefficients = -slope * diagonal
         score = a * (1 + np.log(residual / a)) + l * len(parents)
         score += sum(
-            weights[e] * (1 + np.log(sigma[e][j, j])) + l_delta
+            weights[e] * (1 + np.log(sigma[e][j, j]))
+            + delta_penalties[e - 1]
             for e in range(1, environments) if bits[e - 1]
         )
         intervened_diagonals = [
@@ -79,13 +89,33 @@ def optimization(
     configuration_limit=1_000_000,
     time_limit=None,
 ):
-    """Return Gamma, targets, MIP gap, objective, and runtime."""
-    l_delta = l if l_delta is None else l_delta
-    if min(l, l_delta) < 0 or coefficient_bound <= 0 or not 0 < gamma_lower < gamma_upper:
+    """Return Gamma, targets, MIP gap, objective, and runtime.
+
+    If ``l_delta`` is omitted, environment ``e`` uses the intervention
+    penalty ``l * weights[e]``. A supplied scalar applies the same penalty
+    to every interventional environment; a vector supplies one penalty per
+    interventional environment.
+    """
+    if l < 0 or coefficient_bound <= 0 or not 0 < gamma_lower < gamma_upper:
         raise ValueError("penalties and Gamma bounds are invalid")
 
     data, sigma, weights = _moments(data)
     environments, p = len(data), data[0].shape[1]
+    if l_delta is None:
+        delta_penalties = l * weights[1:]
+    else:
+        supplied_penalties = np.asarray(l_delta, dtype=float)
+        if supplied_penalties.ndim == 0:
+            delta_penalties = np.full(environments - 1, float(supplied_penalties))
+        elif supplied_penalties.shape == (environments - 1,):
+            delta_penalties = supplied_penalties
+        else:
+            raise ValueError(
+                "l_delta must be a scalar or have one value per interventional environment"
+            )
+    if not np.isfinite(delta_penalties).all() or np.any(delta_penalties < 0):
+        raise ValueError("penalties and Gamma bounds are invalid")
+
     candidates = _edges(moral, p)
     if any(np.any(np.diag(s) <= 0) for s in sigma):
         raise ValueError("every variable must have positive empirical variance")
@@ -113,7 +143,7 @@ def optimization(
         for size in sizes[j]:
             for parents in combinations(possible[j], size):
                 score, mask, diagonal, coefficients = _best_local(
-                    j, parents, sigma, weights, l, l_delta, status[:, j],
+                    j, parents, sigma, weights, l, delta_penalties, status[:, j],
                     coefficient_bound, gamma_lower, gamma_upper,
                 )
                 by_node[j].append(len(configs))
@@ -154,10 +184,14 @@ def optimization(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--graph", type=int, default=3 )
+    parser.add_argument("--graph", type=int, default=2)
     parser.add_argument("--iteration", type=int, default=6)
-    parser.add_argument("--lambda-graph", type=float, default=0.07)
-    parser.add_argument("--lambda-delta", type=float, default=0.008)
+    parser.add_argument("--lambda-graph", type=float, default=0.1)
+    parser.add_argument(
+        "--lambda-delta",
+        type=float,
+        help="common target penalty; omit to use lambda_graph times each environment weight",
+    )
     parser.add_argument("--alpha", type=float, default=0.1)
     parser.add_argument("--max-parents", type=int)
     parser.add_argument("--time-limit", type=float, default=60)
@@ -175,4 +209,4 @@ if __name__ == "__main__":
     print("Gamma:\n", result[0])
     print("Targets:", result[1])
     print("MIP gap, objective, runtime:", result[2:])
-    print("d_cpdag, environment target error, TPR, FPR:", errors)
+    print("d_cpdag, environment target error, FDP, TDP:", errors)

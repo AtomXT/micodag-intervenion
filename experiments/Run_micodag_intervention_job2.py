@@ -5,7 +5,7 @@ from gurobipy import nlfunc
 from gurobipy import GRB
 import os
 import causaldag as cd
-from src.utils import ind2mat, skeleton, performance
+from src.utils import equivalence_class_fdp_tdp, ind2mat
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -115,14 +115,12 @@ for graph in [3]:
         estimated_cpdag = estimated_dag.cpdag().to_amat()
         SHD_cpdag = np.sum(np.abs(estimated_cpdag[0] - true_cpdag[0]))
 
-        # SHD = compute_SHD(B_arcs, True_B_mat)
-        skeleton_estimated, skeleton_true = skeleton(B_arcs), skeleton(true_graph_)
-        TPR, FPR = performance(skeleton_estimated, skeleton_true)
+        FDP, TDP = equivalence_class_fdp_tdp(estimated_cpdag[0], true_cpdag[0])
         print(np.count_nonzero(B_arcs), np.count_nonzero(true_graph_))
-        print(TPR, FPR, SHD_cpdag)
-        results.append([graph, iter, lam, mu, rgap, TPR, FPR, SHD_cpdag, run_time])
+        print(FDP, TDP, SHD_cpdag)
+        results.append([graph, iter, lam, mu, rgap, FDP, TDP, SHD_cpdag, run_time])
         results_df = pd.DataFrame(results,
-                                  columns=['graph', 'iter', 'lam', 'mu', 'rgap', 'TPR', 'FPR',
+                                  columns=['graph', 'iter', 'lam', 'mu', 'rgap', 'FDP', 'TDP',
                                            'd_cpdag', 'time'])
         print(results_df)
         results_df.to_csv(f"{current_dir}/../experiment_results/micodag_intervention_job2.csv", index=False)
