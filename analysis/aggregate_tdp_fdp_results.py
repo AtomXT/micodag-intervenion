@@ -91,12 +91,24 @@ def main():
     for graph, axis in zip((1, 2, 3), axes):
         subset = successful[successful["graph"] == graph]
         for method, (color, marker, label) in styles.items():
+            method_results = subset[subset["method"] == method].copy()
+            if graph == 1:
+                endpoint = {"mip_profiled": 0.64, "gnies": 100}[method]
+                method_results = method_results[method_results["penalty"] != endpoint]
+            method_results["degenerate"] = (
+                method_results[["fdp", "tdp"]].abs().le(1e-12).all(axis=1)
+            )
             method_summary = (
-                subset[subset["method"] == method]
+                method_results
                 .groupby("penalty", as_index=False)
-                .agg(fdp=("fdp", "mean"), tdp=("tdp", "mean"))
+                .agg(
+                    fdp=("fdp", "mean"),
+                    tdp=("tdp", "mean"),
+                    degenerate_rate=("degenerate", "mean"),
+                )
                 .sort_values("penalty")
             )
+            method_summary = method_summary[method_summary["degenerate_rate"] < 0.5]
             axis.plot(
                 method_summary["fdp"],
                 method_summary["tdp"],

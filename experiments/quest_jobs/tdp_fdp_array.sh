@@ -8,7 +8,7 @@
 #SBATCH --mem=32G
 #SBATCH --array=1-10
 #SBATCH --job-name=tdp_fdp
-#SBATCH --output=experiments/quest_jobs/tdp_fdp_%A_%a.out
+#SBATCH --output=experiments/quest_jobs/outlog/tdp_fdp_%A_%a.out
 #SBATCH --mail-type=FAIL,END
 #SBATCH --mail-user=tongxu2027@u.northwestern.edu
 
