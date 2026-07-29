@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run checkpointed MIP-profiled and GnIES FDP/TDP experiments."""
+"""Run checkpointed PS-MIP and GnIES FDP/TDP experiments."""
 
 import argparse
 import csv

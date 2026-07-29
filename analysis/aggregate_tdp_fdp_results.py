@@ -85,7 +85,7 @@ def main():
 
     figure, axes = plt.subplots(1, 3, figsize=(13, 4), sharex=True, sharey=True)
     styles = {
-        "mip_profiled": ("tab:blue", "o", "MIP-profiled"),
+        "mip_profiled": ("tab:blue", "o", "PS-MIP"),
         "gnies": ("tab:orange", "s", "GnIES"),
     }
     for graph, axis in zip((1, 2, 3), axes):
