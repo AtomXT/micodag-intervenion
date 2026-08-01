@@ -4,6 +4,12 @@ __pycache__/
 .env
 .Rhistory
 .idea/
+.venv-dcdi/
+external/dcdi/
 tests/
 paper/
 experiments/quest_jobs/outlog/
+experiment_results/dcdi_manual/
+experiment_results/tdp_fdp_dcdi/work/
+experiment_results/**/trial_*.lock
+requirements-dcdi.txt

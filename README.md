@@ -48,6 +48,8 @@ second-moment matrices and the chosen coefficient bounds.
 | `MIP_profiled.py` | Fully profiled parent-set and intervention-pattern MILP |
 | `MIP_naive.py` | Original full joint-environment formulation from Equation (4.2) |
 | `GNIES.py` | GNIES rank baseline using the same synthetic-data defaults |
+| `DCDI.py` | Adapter for the official DCDI-G perfect/unknown-target implementation |
+| `UTIGSP.py` | Adapter for UT-IGSP from `causaldag` |
 | `MICP.py` | Legacy joint-environment formulation, retained for reference |
 | `data/DataGeneration.py` | Python translation of the original R synthetic-data generator |
 | `data/DataGeneration_vary_n.py` | Fixed 20-node graph with `n = 100, 500, 1000` in every environment |
@@ -79,7 +81,8 @@ Using a virtual environment is recommended:
 python3.9 -m venv /path/to/venvs/python39
 source /path/to/venvs/python39/bin/activate
 brew install libomp
-python -m pip install numpy scikit-learn causaldag gnies gurobipy "pgmpy==0.1.25"
+python -m pip install numpy scikit-learn "causaldag==0.1a163" gnies gurobipy \
+  "pgmpy==0.1.25"
 ```
 
 Install `pandas` as well when using the legacy data-loading utilities:
@@ -93,6 +96,33 @@ scripts.
 
 The `pgmpy` pin is required when using Python 3.9 because current `pgmpy`
 releases require Python 3.10 or newer.
+
+### Project-local DCDI installation
+
+`DCDI.py` uses the official DCDI source pinned at commit
+`594d328eae7795785e0d1a1138945e28a4fec037`. The source and its Python
+environment are installed below the project and ignored by Git. The sparse
+checkout avoids downloading DCDI's large example-data directory.
+
+From the repository root:
+
+```bash
+mkdir -p external
+git clone --filter=blob:none --no-checkout \
+  https://github.com/slachapelle/dcdi.git external/dcdi
+git -C external/dcdi sparse-checkout init --cone
+git -C external/dcdi sparse-checkout set dcdi
+git -C external/dcdi checkout 594d328eae7795785e0d1a1138945e28a4fec037
+
+python3.9 -m venv .venv-dcdi
+.venv-dcdi/bin/python -m pip install -r requirements-dcdi.txt
+```
+
+The adapter verifies the commit before every fit. It stages only sample values
+and environment labels. Although the upstream loader requires DAG and target
+files, the adapter supplies zero/blank placeholders, so simulation truth is
+not exposed to DCDI's objective. Upstream R-backed reporting metrics are
+disabled because this project performs its own I-CPDAG evaluation.
 
 ## Running the MIP
 
@@ -195,6 +225,93 @@ intervention targets, score, runtime, `d_cpdag`, union-target error, and
 equivalence-class FDP/TDP. GNIES does not return a target indicator for every
 environment-variable pair, so an environment-specific target error is not
 available and should not be compared with the MIP target error.
+
+## UT-IGSP comparison and standalone DCDI-G
+
+The scheduled comparison adds UT-IGSP to the existing PS-MIP and GnIES
+results. The checkpointed comparison runner supports only these three methods;
+DCDI-G remains available separately through `DCDI.py`:
+
+```bash
+python -m experiments.run_tdp_fdp_experiments \
+  --trial 1 \
+  --graphs 1 \
+  --methods utigsp \
+  --penalties 0.001 \
+  --output-dir experiment_results/tdp_fdp_utigsp/manual
+```
+
+The comparison uses UT-IGSP with `depth=4`, `nruns=10`, seed 42, and tied
+`alpha_inv=alpha` over `{0.2,0.1,0.01,0.001,1e-5,1e-7,1e-9}`.
+
+The comparison omits DCDI-G because this project's linear-Gaussian sparse-graph
+setting matches the exception identified in the
+[DCDI paper](https://proceedings.neurips.cc/paper/2020/file/f8b7aa3a0d349d9562b424160ad18612-Paper.pdf),
+where DCDI shows no clear overall advantage over UT-IGSP. DCDI remains
+available for standalone use and future nonlinear or denser experiments.
+
+DCDI-G can be run directly through the project-local installation. Its
+artifacts are retained below `experiment_results/dcdi_manual` by default, so
+an interrupted or completed matching fit can be retried safely:
+
+```bash
+.venv-dcdi/bin/python DCDI.py \
+  --graph 2 \
+  --iteration 6 \
+  --graph-penalty 0.1 \
+  --target-penalty 0.001 \
+  --mu-init 1e-2 \
+  --hidden-dim 8
+```
+
+It prints the estimated DAG, I-CPDAG, environment-specific target matrix,
+runtime, cache/artifact information, and `d_cpdag`/target-error/FDP/TDP.
+
+UT-IGSP can also be run directly on one synthetic dataset. It prints the
+estimated DAG, I-CPDAG, environment-specific target matrix, runtime, and the
+same `d_cpdag`/target-error/FDP/TDP diagnostics as the MIP scripts:
+
+```bash
+python UTIGSP.py --graph 2 --iteration 6 --alpha 0.001
+```
+
+UT-IGSP therefore contributes a one-dimensional significance-level path. Its
+environment-by-variable target matrix is converted with the same
+`interventional_cpdag()` function and evaluated with the same exact FDP/TDP
+metric as PS-MIP.
+
+The new Quest array runs only UT-IGSP. Each of its ten array tasks handles one
+complete trial across all three graphs and all seven tied significance levels.
+Each task writes an isolated result fragment, so the completed files in
+`experiment_results/tdp_fdp` are never rewritten and concurrent tasks cannot
+overwrite one another. Per-fragment advisory locks make an accidental
+overlapping submission fail fast instead of corrupting a retry:
+
+```bash
+mkdir -p experiments/quest_jobs/outlog
+sbatch experiments/quest_jobs/tdp_fdp_utigsp_array.sh
+```
+
+The UT-IGSP array contains 10 tasks, one per trial. Each task sequentially runs
+the 21 graph/significance-level combinations for that trial. Its default result
+location is `experiment_results/tdp_fdp_utigsp`.
+
+After the array finishes, aggregate the old and new result directories with:
+
+```bash
+python analysis/aggregate_tdp_fdp_results.py
+```
+
+Aggregation preserves every ingested row in `raw_results.csv`, but uses only
+the declared comparison grids for `combined_results.csv`, summaries, and
+figures. The 90 exploratory endpoints already present in the historical CSVs
+are reported separately in `legacy_extra_results.csv`; genuinely unknown or
+duplicate combinations cause separate diagnostics rather than silently
+changing a curve.
+
+Combined CSV summaries and a validation report are written to
+`experiment_results/tdp_fdp_comparison`; the three-method figure is written to
+`analysis/tdp_fdp.pdf` and `analysis/tdp_fdp.png`.
 
 ## Synthetic Data
 
