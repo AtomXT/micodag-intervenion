@@ -1,0 +1,23 @@
+input directories: 2
+trial fragments: 20
+expected comparison rows: 840
+raw observed rows: 840
+comparison rows: 840
+missing combinations: 0
+unexpected rows: 0
+successful comparison rows: 840
+duplicate expected keys: 0
+rows belonging to duplicate expected keys: 0
+
+comparison status counts:
+method        graph  status     
+gnies         1      ok             100
+              2      ok             110
+              3      ok             100
+mip_profiled  1      ok             100
+              2      ok             110
+              3      ok              99
+                     ok_with_gap     11
+utigsp        1      ok              70
+              2      ok              70
+              3      ok              70

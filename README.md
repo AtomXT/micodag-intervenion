@@ -50,7 +50,6 @@ second-moment matrices and the chosen coefficient bounds.
 | `GNIES.py` | GNIES rank baseline using the same synthetic-data defaults |
 | `DCDI.py` | Adapter for the official DCDI-G perfect/unknown-target implementation |
 | `UTIGSP.py` | Adapter for UT-IGSP from `causaldag` |
-| `MICP.py` | Legacy joint-environment formulation, retained for reference |
 | `data/DataGeneration.py` | Python translation of the original R synthetic-data generator |
 | `data/DataGeneration_vary_n.py` | Fixed 20-node graph with `n = 100, 500, 1000` in every environment |
 | `data/DataGeneration.R` | Original data-generation reference |
@@ -302,16 +301,17 @@ After the array finishes, aggregate the old and new result directories with:
 python analysis/aggregate_tdp_fdp_results.py
 ```
 
-Aggregation preserves every ingested row in `raw_results.csv`, but uses only
-the declared comparison grids for `combined_results.csv`, summaries, and
-figures. The 90 exploratory endpoints already present in the historical CSVs
-are reported separately in `legacy_extra_results.csv`; genuinely unknown or
-duplicate combinations cause separate diagnostics rather than silently
-changing a curve.
+Aggregation preserves every ingested row in `raw_results.csv`, validates it
+against the declared comparison grids, and uses the validated rows for
+`combined_results.csv`, summaries, and figures. Unknown or duplicate
+combinations cause separate diagnostics rather than silently changing a curve.
 
 Combined CSV summaries and a validation report are written to
 `experiment_results/tdp_fdp_comparison`; the three-method figure is written to
-`analysis/tdp_fdp.pdf` and `analysis/tdp_fdp.png`.
+`analysis/tdp_fdp.pdf` and `analysis/tdp_fdp.png`. The same aggregation command
+also regenerates the manuscript's trial-wise best-penalty table data at
+`experiment_results/tdp_fdp/best_dcpdag_summary.csv` and the LaTeX table included
+by the writeup at `experiment_results/tdp_fdp/best_dcpdag_table.tex`.
 
 ## Synthetic Data
 

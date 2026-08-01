@@ -234,5 +234,4 @@ def compute_SHD(learned_DAG, True_DAG, SHDs=False):
 
 
 if __name__ == '__main__':
-    # print(read_B("MICP", "3bowling", "true", 0.1))
     print('Running utils.')

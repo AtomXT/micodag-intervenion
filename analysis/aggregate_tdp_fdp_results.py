@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Combine trial fragments and create three-method FDP/TDP plots."""
+"""Combine trial fragments and create three-method comparison outputs."""
 
 from __future__ import annotations
 
@@ -29,10 +29,18 @@ DEFAULT_INPUT_DIRS = [
     PROJECT_ROOT / "experiment_results" / "tdp_fdp",
     PROJECT_ROOT / "experiment_results" / "tdp_fdp_utigsp" / "parts",
 ]
-LEGACY_EXTRA_GRIDS = {
-    "mip_profiled": {1: [0.64, 1.28], 2: [1.28], 3: [1.28]},
-    "gnies": {1: [100, 300], 2: [300], 3: [480, 640]},
+BEST_DCPDAG_TABLE = (
+    PROJECT_ROOT / "experiment_results" / "tdp_fdp" / "best_dcpdag_summary.csv"
+)
+BEST_DCPDAG_LATEX_TABLE = (
+    PROJECT_ROOT / "experiment_results" / "tdp_fdp" / "best_dcpdag_table.tex"
+)
+METHOD_LABELS = {
+    "mip_profiled": "PS-MIP",
+    "gnies": "GnIES",
+    "utigsp": "UT-IGSP",
 }
+METHOD_ORDER = ["PS-MIP", "GnIES", "UT-IGSP"]
 NUMERIC_COLUMNS = [
     "graph", "trial", "penalty", "target_penalty", "dcdi_hidden_dim",
     "dcdi_mu_init", "dcdi_max_iterations", "fdp", "tdp", "d_cpdag",
@@ -87,23 +95,6 @@ def _expected_results():
                     for penalty in grid
                 )
     return pd.DataFrame(rows)
-
-
-def _known_legacy_results():
-    """Return completed exploratory endpoints retained from the original runs."""
-    return pd.DataFrame(
-        dict(
-            method=method,
-            graph=graph,
-            trial=trial,
-            penalty=penalty,
-            target_penalty=np.nan,
-        )
-        for trial in range(1, 11)
-        for method, graph_grids in LEGACY_EXTRA_GRIDS.items()
-        for graph, penalties in graph_grids.items()
-        for penalty in penalties
-    )
 
 
 def _with_comparison_keys(frame):
@@ -190,6 +181,83 @@ def _plot(successful, figure_dir):
     plt.close(figure)
 
 
+def _best_dcpdag_summary(successful):
+    """Apply the manuscript's trial-wise best-penalty selection rule."""
+    selected = (
+        successful.sort_values(
+            ["method", "graph", "trial", "d_cpdag", "fit_seconds", "penalty"]
+        )
+        .drop_duplicates(["method", "graph", "trial"], keep="first")
+        .copy()
+    )
+    trial_counts = selected.groupby(["method", "graph"])["trial"].nunique()
+    incomplete = trial_counts[trial_counts != 10]
+    if not incomplete.empty:
+        raise RuntimeError(
+            "cannot generate the best-d_cpdag table without ten trials for "
+            f"every method and graph:\n{incomplete.to_string()}"
+        )
+
+    selected["rgap_percent"] = 100.0 * selected["mip_gap"]
+    table = (
+        selected.groupby(["graph", "method"], as_index=False)
+        .agg(
+            time_seconds=("fit_seconds", "mean"),
+            tdp=("tdp", "mean"),
+            fdp=("fdp", "mean"),
+            d_cpdag=("d_cpdag", "mean"),
+            rgap_percent=("rgap_percent", "mean"),
+        )
+    )
+    table["method"] = table["method"].map(METHOD_LABELS)
+    table["_method_order"] = table["method"].map(
+        {method: index for index, method in enumerate(METHOD_ORDER)}
+    )
+    table = table.sort_values(["graph", "_method_order"]).drop(
+        columns="_method_order"
+    )
+    table["time_seconds"] = table["time_seconds"].round(2)
+    table[["tdp", "fdp"]] = table[["tdp", "fdp"]].round(3)
+    table["d_cpdag"] = table["d_cpdag"].round(1)
+    table["rgap_percent"] = table["rgap_percent"].round(4)
+    return table
+
+
+def _write_best_dcpdag_summary(table, path):
+    """Write the table with the same precision used in the manuscript."""
+    formatted = table.copy()
+    formatted["time_seconds"] = formatted["time_seconds"].map(lambda x: f"{x:.2f}")
+    formatted["tdp"] = formatted["tdp"].map(lambda x: f"{x:.3f}")
+    formatted["fdp"] = formatted["fdp"].map(lambda x: f"{x:.3f}")
+    formatted["d_cpdag"] = formatted["d_cpdag"].map(lambda x: f"{x:.1f}")
+    formatted["rgap_percent"] = formatted["rgap_percent"].map(
+        lambda x: "" if pd.isna(x) else f"{x:.4f}"
+    )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    formatted.to_csv(path, index=False)
+
+
+def _write_best_dcpdag_latex_table(table, path):
+    """Write the complete tabular block consumed directly by the manuscript."""
+    lines = [
+        r"\begin{tabular}{clrrrrr}",
+        r"    \hline",
+        r"    Graph & Method & Time (s) & TDP & FDP &",
+        r"    \(d_{\mathrm{CPDAG}}\) & RGAP (\%) \\",
+        r"    \hline",
+    ]
+    for result in table.itertuples(index=False):
+        rgap = "--" if pd.isna(result.rgap_percent) else f"{result.rgap_percent:.0f}"
+        lines.append(
+            f"    {result.graph} & {result.method} & {result.time_seconds:.2f} & "
+            f"{result.tdp:.3f} & {result.fdp:.3f} & {result.d_cpdag:.1f} & "
+            f"{rgap} \\\\"
+        )
+    lines.extend([r"    \hline", r"\end{tabular}"])
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines) + "\n")
+
+
 def _parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -203,6 +271,12 @@ def _parse_args():
     parser.add_argument(
         "--figure-dir", type=Path, default=Path(__file__).resolve().parent
     )
+    parser.add_argument(
+        "--table-output", type=Path, default=BEST_DCPDAG_TABLE
+    )
+    parser.add_argument(
+        "--latex-table-output", type=Path, default=BEST_DCPDAG_LATEX_TABLE
+    )
     return parser.parse_args()
 
 
@@ -215,22 +289,17 @@ def main():
 
     results = _read_results(paths)
     expected = _expected_results()
-    known_legacy = _known_legacy_results()
     keyed_results = _with_comparison_keys(results)
     keyed_expected = _with_comparison_keys(expected)
-    keyed_legacy = _with_comparison_keys(known_legacy)
     helper_keys = ["_target_key", "_hidden_key", "_mu_key", "_iterations_key"]
     merge_keys = ["method", "graph", "trial", "penalty", *helper_keys]
 
     result_key_index = pd.MultiIndex.from_frame(keyed_results[merge_keys])
     expected_key_index = pd.MultiIndex.from_frame(keyed_expected[merge_keys])
-    legacy_key_index = pd.MultiIndex.from_frame(keyed_legacy[merge_keys])
     expected_mask = result_key_index.isin(expected_key_index)
-    legacy_mask = result_key_index.isin(legacy_key_index)
 
     comparison_keyed = keyed_results.loc[expected_mask].copy()
-    legacy_keyed = keyed_results.loc[legacy_mask].copy()
-    unexpected_keyed = keyed_results.loc[~(expected_mask | legacy_mask)].copy()
+    unexpected_keyed = keyed_results.loc[~expected_mask].copy()
     observed_keys = comparison_keyed[merge_keys].drop_duplicates()
     missing = (
         keyed_expected.merge(observed_keys, on=merge_keys, how="left", indicator=True)
@@ -243,13 +312,11 @@ def main():
         comparison_keyed.loc[duplicate_mask, merge_keys].drop_duplicates()
     )
     comparison = comparison_keyed.drop(columns=helper_keys)
-    legacy = legacy_keyed.drop(columns=helper_keys)
     unexpected = unexpected_keyed.drop(columns=helper_keys)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     missing.to_csv(args.output_dir / "missing_combinations.csv", index=False)
     unexpected.to_csv(args.output_dir / "unexpected_combinations.csv", index=False)
-    legacy.to_csv(args.output_dir / "legacy_extra_results.csv", index=False)
     duplicates.to_csv(
         args.output_dir / "duplicate_expected_combinations.csv", index=False
     )
@@ -267,8 +334,7 @@ def main():
         f"raw observed rows: {len(results)}",
         f"comparison rows: {len(comparison)}",
         f"missing combinations: {len(missing)}",
-        f"known legacy extra rows: {len(legacy)}",
-        f"truly unexpected rows: {len(unexpected)}",
+        f"unexpected rows: {len(unexpected)}",
         f"successful comparison rows: {len(successful)}",
         f"duplicate expected keys: {duplicate_key_count}",
         f"rows belonging to duplicate expected keys: {len(duplicates)}",
@@ -304,6 +370,9 @@ def main():
         )
     )
     summary.to_csv(args.output_dir / "curve_summary.csv", index=False)
+    best_dcpdag = _best_dcpdag_summary(successful)
+    _write_best_dcpdag_summary(best_dcpdag, args.table_output)
+    _write_best_dcpdag_latex_table(best_dcpdag, args.latex_table_output)
     _plot(successful, args.figure_dir)
     print(report)
 

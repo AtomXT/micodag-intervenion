@@ -1,0 +1,1 @@
+method,graph,trial,penalty,fdp,tdp,d_cpdag,union_target_error,fit_seconds,metric_seconds,mip_gap,status,error,target_penalty,dcdi_hidden_dim,dcdi_mu_init,dcdi_max_iterations
