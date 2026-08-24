@@ -101,23 +101,21 @@ releases require Python 3.10 or newer.
 ### DCDI installation
 
 `DCDI.py` uses the official DCDI source pinned at commit
-`594d328eae7795785e0d1a1138945e28a4fec037`. The source is installed below the
-project and ignored by Git. Install its packages into the same active Python
-environment used for the main experiment. The sparse checkout avoids
-downloading DCDI's large example-data directory.
+`594d328eae7795785e0d1a1138945e28a4fec037`. The minimal source snapshot needed
+by this experiment is committed under `external/dcdi`; upstream example data
+and unrelated methods are omitted. A normal GitHub clone or pull therefore
+contains everything required to launch DCDI.
 
 From the repository root:
 
 ```bash
-mkdir -p external
-git clone --filter=blob:none --no-checkout \
-  https://github.com/slachapelle/dcdi.git external/dcdi
-git -C external/dcdi sparse-checkout init --cone
-git -C external/dcdi sparse-checkout set dcdi
-git -C external/dcdi checkout 594d328eae7795785e0d1a1138945e28a4fec037
-
 python3 -m pip install -r requirements-dcdi.txt
 ```
+
+`external/dcdi/VENDORED_SOURCE.json` records the official repository URL,
+commit, and SHA-256 digest of every included upstream file. The adapter checks
+that committed manifest and every source file before each fit, rejecting local
+changes or unexpected files without requiring nested Git metadata.
 
 The adapter verifies the exact source commit, confirms that required Python and
 R imports work, records their actual versions, and rejects tracked changes or

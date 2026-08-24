@@ -44,6 +44,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 DEFAULT_DCDI_PATH = PROJECT_ROOT / "external" / "dcdi"
 DCDI_SOURCE_URL = "https://github.com/slachapelle/dcdi"
 DCDI_COMMIT = "594d328eae7795785e0d1a1138945e28a4fec037"
+DCDI_VENDOR_MANIFEST = "VENDORED_SOURCE.json"
+DCDI_VENDOR_MANIFEST_SHA256 = (
+    "307d11288b2bdefd5346986d6ca30e2ac001d92a982e2579c1724aa6ac77858c"
+)
 COMPLETION_FILENAME = "adapter_complete.json"
 DEFAULT_HIDDEN_DIM = 8
 DEFAULT_MU_INIT = 1e-2
@@ -117,59 +121,70 @@ def _validate_options(
 
 
 def _validate_checkout(path: Union[str, os.PathLike[str]]) -> Tuple[Path, bool]:
-    """Return a clean official checkout at the pinned commit."""
+    """Validate the committed author snapshot against its pinned hash manifest."""
     checkout = Path(path).expanduser().resolve()
     required = [
         checkout / "main.py",
         checkout / "dcdi" / "data.py",
         checkout / "dcdi" / "train.py",
+        checkout / DCDI_VENDOR_MANIFEST,
     ]
     missing = [str(item) for item in required if not item.is_file()]
     if missing:
         raise FileNotFoundError(
-            f"DCDI checkout is missing required files at {checkout}. "
-            f"Expected the official repository at commit {DCDI_COMMIT}."
+            f"vendored DCDI source is missing required files at {checkout}. "
+            "Restore the tracked external/dcdi directory with Git."
         )
 
+    manifest_path = checkout / DCDI_VENDOR_MANIFEST
+    manifest_bytes = manifest_path.read_bytes()
+    manifest_digest = hashlib.sha256(manifest_bytes).hexdigest()
+    if manifest_digest != DCDI_VENDOR_MANIFEST_SHA256:
+        raise DCDIError(
+            "the vendored DCDI provenance manifest was modified; restore "
+            f"{manifest_path} from Git"
+        )
     try:
-        head = subprocess.run(
-            ["git", "-C", str(checkout), "rev-parse", "HEAD"],
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
-    except (OSError, subprocess.CalledProcessError) as error:
+        manifest = json.loads(manifest_bytes)
+        files = manifest["files"]
+    except (json.JSONDecodeError, KeyError, TypeError) as error:
         raise DCDIError(
-            f"cannot verify the DCDI checkout at {checkout}; it must retain its git metadata"
+            "cannot parse the vendored DCDI provenance manifest"
         ) from error
-    if head != DCDI_COMMIT:
+    if (
+        manifest.get("format_version") != 1
+        or manifest.get("source_url") != f"{DCDI_SOURCE_URL}.git"
+        or manifest.get("source_commit") != DCDI_COMMIT
+        or not isinstance(files, dict)
+        or not files
+    ):
         raise DCDIError(
-            f"DCDI checkout is at {head}, expected pinned commit {DCDI_COMMIT}"
+            "the vendored DCDI manifest does not identify the expected author source"
         )
 
-    status = subprocess.run(
-        ["git", "-C", str(checkout), "status", "--porcelain", "--untracked-files=all"],
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout
-    dirty = bool(status.strip())
-    if dirty:
+    actual_files = {
+        source.relative_to(checkout).as_posix()
+        for source in checkout.rglob("*")
+        if source.is_file() and source != manifest_path
+    }
+    expected_files = set(files)
+    if actual_files != expected_files:
+        extra = sorted(actual_files - expected_files)
+        absent = sorted(expected_files - actual_files)
         raise DCDIError(
-            "DCDI checkout has local modifications or untracked files; use the clean "
-            "pinned author checkout"
+            "the vendored DCDI file set differs from the pinned snapshot; "
+            f"extra={extra[:3]}, missing={absent[:3]}"
         )
-    compiled_overrides = [
-        path
-        for suffix in ("*.so", "*.pyd", "*.dylib")
-        for path in checkout.rglob(suffix)
-    ]
-    if compiled_overrides:
-        raise DCDIError(
-            "DCDI checkout contains an ignored compiled module that could override "
-            f"the author source: {compiled_overrides[0]}"
-        )
-    return checkout, dirty
+    for relative, expected_digest in files.items():
+        source_path = checkout / relative
+        if source_path.is_symlink():
+            raise DCDIError(f"vendored DCDI source must not be a symlink: {relative}")
+        actual_digest = hashlib.sha256(source_path.read_bytes()).hexdigest()
+        if actual_digest != expected_digest:
+            raise DCDIError(
+                f"vendored DCDI source differs from commit {DCDI_COMMIT}: {relative}"
+            )
+    return checkout, False
 
 
 def _resolve_python(path: Union[str, os.PathLike[str]]) -> Path:

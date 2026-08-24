@@ -1,0 +1,30 @@
+{
+  "format_version": 1,
+  "source_url": "https://github.com/slachapelle/dcdi.git",
+  "source_commit": "594d328eae7795785e0d1a1138945e28a4fec037",
+  "selection": "repository root files plus the dcdi source directory",
+  "files": {
+    ".gitignore": "79b6f8054f8ef5e9e78c18174bf57caf29b11410166b9268d6923e87520eb88f",
+    "LICENSE.md": "d92245b5cb9fe7394dd30e50d736409917896a17f343d34ba5a7f52256ebcc2d",
+    "README.md": "6f403f53b6b7d880d86f883860fbee455f506f71d7a73b97ca8f4726cd87b26b",
+    "dcdi/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "dcdi/dag_optim.py": "1b4e85c0cd638e98476e9b5160b95c8706e203cdb57ff86ea44691f60ac3e53d",
+    "dcdi/data.py": "89241adef76332c5209d1e1c4330695aaae0be2a4508799970d888d0e6a0b854",
+    "dcdi/main.py": "e50fbd2ac6654d799ada303be629874bc74269888e19cb9b648054aa2bb4a05b",
+    "dcdi/models/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "dcdi/models/base_model.py": "348584703dab4fae9c140da9b67c952d7bf7c6018a32ed89c421992a904071ec",
+    "dcdi/models/flows.py": "f05052ea6c6153bb6ec5499db0a29ac801849c4a8433927523495d85b0cc9780",
+    "dcdi/models/learnables.py": "7118fa888792232b3cc41d45e558357542c94cf97292c50f36dfa8ee18cfc6f9",
+    "dcdi/plot.py": "00d0cec09a0827fc21df362e6f2ded96fb6e1c413e02af795dc2eeaf29a0ad9b",
+    "dcdi/prox.py": "f2480d4ad06bfaf6ad07dd93415c3af20e039cf75e0108e25abeca6adfadd72c",
+    "dcdi/torchkit.py": "8246771856c33b5add4d6c3229bd6b6b50838650dc3279fb8d08da0866c46559",
+    "dcdi/train.py": "991d4854253a80702847c916fadb5f42ebad0c80283454feaef8a482f654fdbf",
+    "dcdi/utils/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "dcdi/utils/gumbel.py": "dc21445de07eaf8806303287e07e625b811e091507dc4128f143a4f38a4dcb95",
+    "dcdi/utils/metrics.py": "20f7947764cbda845a343ff2704aa6b3c97b3a2c1504774c974c26cf2f095fdd",
+    "dcdi/utils/penalty.py": "fbde4c995e37e73c75a3d61b0e90e3b25c5e6a15e7a19262de6860a9c608af5f",
+    "dcdi/utils/save.py": "a4a3c8753955773bfacea9aa3519ebfe86e3e659703ce73a13be862f2bc28b77",
+    "main.py": "f502f12a465feecf1e2ec445975c2e2e81b14c7f35cccc965e3b7e17f77e246e",
+    "paper_graphic.png": "6d1187b232b4edb92edd66a19bc31d77e7df2124b179a24a94ba879258051a99"
+  }
+}

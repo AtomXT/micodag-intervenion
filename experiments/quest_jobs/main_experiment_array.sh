@@ -57,6 +57,11 @@ if [[ "${MAIN_RETRY_FAILURES:-0}" == "1" ]]; then
   retry_arguments+=(--retry-failures)
 fi
 
+if [[ ! -f "${dcdi_root}/main.py" ]]; then
+  echo "missing tracked DCDI author source at ${dcdi_root}; restore external/dcdi from Git" >&2
+  exit 2
+fi
+
 if [[ "${rscript}" == */* ]]; then
   if [[ ! -x "${rscript}" ]]; then
     echo "RSCRIPT is not executable: ${rscript}" >&2

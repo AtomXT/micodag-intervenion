@@ -5,7 +5,6 @@ __pycache__/
 .Rhistory
 .idea/
 .venv*/
-external/dcdi/
 paper/
 experiments/quest_jobs/outlog/*
 !experiments/quest_jobs/outlog/.gitkeep
