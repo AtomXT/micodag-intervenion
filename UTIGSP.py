@@ -7,9 +7,17 @@ import argparse
 import operator
 import random
 import time
-from pathlib import Path
 
 import numpy as np
+
+from src.main_experiment_cli import (
+    add_main_data_arguments,
+    instance_summary,
+    load_cli_instance,
+    selected_method_seed,
+    wall_time_limit,
+)
+from src.main_experiment_data import MainExperimentDataError
 
 
 def _load_causaldag_api():
@@ -27,8 +35,7 @@ def _load_causaldag_api():
     except Exception as exc:
         raise ImportError(
             "UT-IGSP requires a compatible causaldag installation. "
-            "Using Python 3.9, install `causaldag==0.1a163` and "
-            "`pgmpy==0.1.25`."
+            "Install `causaldag` and its required dependencies."
         ) from exc
 
     return (
@@ -210,13 +217,12 @@ def fit(
 
 
 def main():
-    """Run UT-IGSP on one repository synthetic dataset and print diagnostics."""
+    """Run UT-IGSP on one persisted main-experiment instance."""
     parser = argparse.ArgumentParser(
         description="Run UT-IGSP with unknown intervention targets."
     )
-    parser.add_argument("--graph", type=int, default=1)
-    parser.add_argument("--iteration", type=int, default=6)
-    parser.add_argument("--alpha", type=float, default=5e-3)
+    add_main_data_arguments(parser, method_seed=True)
+    parser.add_argument("--alpha", type=float, default=1e-5)
     parser.add_argument(
         "--alpha-inv",
         type=float,
@@ -224,33 +230,46 @@ def main():
     )
     parser.add_argument("--depth", type=int, default=4)
     parser.add_argument("--nruns", type=int, default=10)
-    parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument(
-        "--data-root",
-        type=Path,
-        default=Path(__file__).resolve().parent / "data" / "SyntheticData",
-    )
+    parser.add_argument("--time-limit", type=float, default=3600)
+    parser.add_argument("--metric-time-limit", type=float, default=3600)
     args = parser.parse_args()
-
-    from MIP import _load
+    if (
+        not np.isfinite([args.time_limit, args.metric_time_limit]).all()
+        or args.time_limit <= 0
+        or args.metric_time_limit <= 0
+    ):
+        parser.error("time limits must be positive and finite")
     from src.utils import compute_errors, interventional_cpdag
-
-    data, _, true_dag, true_targets = _load(
-        args.data_root, args.graph, args.iteration
-    )
+    try:
+        data, true_dag, true_targets, info = load_cli_instance(args)
+    except MainExperimentDataError as error:
+        parser.error(str(error))
+    method_seed = selected_method_seed(args, info)
     started = time.perf_counter()
-    dag, targets = fit(
-        data,
-        alpha=args.alpha,
-        alpha_inv=args.alpha_inv,
-        depth=args.depth,
-        nruns=args.nruns,
-        seed=args.seed,
-    )
+    with wall_time_limit(args.time_limit, "UT-IGSP fit"):
+        dag, targets = fit(
+            data,
+            alpha=args.alpha,
+            alpha_inv=args.alpha_inv,
+            depth=args.depth,
+            nruns=args.nruns,
+            seed=method_seed,
+        )
     runtime = time.perf_counter() - started
-    estimated_icpdag = interventional_cpdag(dag, targets)
-    errors = compute_errors(dag, targets, true_dag, true_targets)
+    with wall_time_limit(args.metric_time_limit, "metric evaluation"):
+        estimated_icpdag = interventional_cpdag(dag, targets)
+        errors = compute_errors(dag, targets, true_dag, true_targets)
 
+    effective_alpha_inv = args.alpha if args.alpha_inv is None else args.alpha_inv
+
+    print("Instance:", instance_summary(args, data, true_dag, true_targets, info))
+    print(
+        "Configuration:",
+        {"alpha": args.alpha, "alpha_inv": effective_alpha_inv,
+         "depth": args.depth, "nruns": args.nruns,
+         "method_seed": method_seed, "fit_time_limit": args.time_limit,
+         "metric_time_limit": args.metric_time_limit},
+    )
     print("DAG:\n", dag)
     print("I-CPDAG:\n", estimated_icpdag)
     print("Targets:\n", targets)

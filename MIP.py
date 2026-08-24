@@ -4,10 +4,18 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 
 import numpy as np
 from sklearn.covariance import GraphicalLasso
+from src.main_experiment_cli import (
+    add_main_data_arguments,
+    instance_summary,
+    load_cli_instance,
+    main_screen_alpha,
+    primary_mip_penalty,
+    wall_time_limit,
+)
+from src.main_experiment_data import MainExperimentDataError
 from src.utils import compute_errors
 
 try:
@@ -179,38 +187,85 @@ def optimization(
     return gamma, targets, model.MIPGap, model.ObjVal, model.Runtime
 
 
-def _load(root, graph, iteration):
-    folder = root / f"graph{graph}"
-    paths = sorted(folder.glob("environment*"), key=lambda x: int(x.name[11:]))
-    data = [np.loadtxt(folder / "observational" / f"data_{iteration}.csv", delimiter=",")]
-    data += [np.loadtxt(x / f"data_{iteration}.csv", delimiter=",") for x in paths]
-    p = data[0].shape[1]
-    moral = np.loadtxt(root / f"Moral_{p}.txt", ndmin=2)
-    true_dag = np.zeros((p, p), dtype=int)
-    true_dag[tuple((np.loadtxt(root / f"DAG_{p}.txt", dtype=int, ndmin=2) - 1).T)] = 1
-    true_targets = np.zeros((len(paths), p), dtype=int)
-    for e, line in enumerate((folder / "intervention_targets.txt").read_text().splitlines()):
-        true_targets[e, np.fromstring(line, dtype=int, sep=",") - 1] = 1
-    return data, moral, true_dag, true_targets
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--graph", type=int, default=1)
-    parser.add_argument("--iteration", type=int, default=1)
-    parser.add_argument("--lambda-graph", type=float, default=0.05)
-    parser.add_argument("--lambda-delta", type=float)
-    parser.add_argument("--alpha", type=float, default=0.2)
-    parser.add_argument("--time-limit", type=float, default=60)
-    args = parser.parse_args()
-    datasets, _, true_dag, true_targets = _load(Path("data/SyntheticData"), args.graph, args.iteration)
-    moral_graph = estimate_moral_graph(datasets[0], args.alpha)
-    result = optimization(
-        datasets, moral_graph, args.lambda_graph,
-        l_delta=args.lambda_delta, time_limit=args.time_limit,
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Run the equation (4.4) MIP on one persisted main instance."
     )
-    errors = compute_errors(result[0], result[1], true_dag, true_targets)
+    add_main_data_arguments(parser)
+    parser.add_argument(
+        "--lambda-graph",
+        type=float,
+        help="graph penalty; omit for the primary log(N)/N setting",
+    )
+    parser.add_argument("--lambda-delta", type=float)
+    parser.add_argument("--screen-constant", type=float, default=5.0)
+    parser.add_argument("--threads", type=int, default=1)
+    parser.add_argument("--time-limit", type=float, default=3600)
+    parser.add_argument("--metric-time-limit", type=float, default=3600)
+    args = parser.parse_args()
+    numeric_values = [
+        args.time_limit,
+        args.metric_time_limit,
+        args.screen_constant,
+        *(
+            [] if args.lambda_graph is None else [args.lambda_graph]
+        ),
+        *(
+            [] if args.lambda_delta is None else [args.lambda_delta]
+        ),
+    ]
+    if (
+        args.threads < 1
+        or not np.isfinite(numeric_values).all()
+        or args.time_limit <= 0
+        or args.metric_time_limit <= 0
+        or args.screen_constant <= 0
+        or (args.lambda_graph is not None and args.lambda_graph < 0)
+        or (args.lambda_delta is not None and args.lambda_delta < 0)
+    ):
+        parser.error(
+            "threads must be positive and all penalties/limits must be finite "
+            "with positive limits"
+        )
+    try:
+        datasets, true_dag, true_targets, info = load_cli_instance(args)
+    except MainExperimentDataError as error:
+        parser.error(str(error))
+    graph_penalty = (
+        primary_mip_penalty(datasets)
+        if args.lambda_graph is None
+        else args.lambda_graph
+    )
+    target_penalty = (
+        graph_penalty if args.lambda_delta is None else args.lambda_delta
+    )
+    alpha = main_screen_alpha(datasets, args.screen_constant)
+    moral_graph = estimate_moral_graph(datasets[0], alpha)
+    if gp is not None:
+        gp.setParam("Threads", args.threads)
+    result = optimization(
+        datasets,
+        moral_graph,
+        graph_penalty,
+        l_delta=target_penalty,
+        time_limit=args.time_limit,
+    )
+    with wall_time_limit(args.metric_time_limit, "metric evaluation"):
+        errors = compute_errors(result[0], result[1], true_dag, true_targets)
+    print("Instance:", instance_summary(args, datasets, true_dag, true_targets, info))
+    print(
+        "Configuration:",
+        {"screen_constant": args.screen_constant, "screen_alpha": alpha,
+         "graph_penalty": graph_penalty, "target_penalty": target_penalty,
+         "threads": args.threads, "fit_time_limit": args.time_limit,
+         "metric_time_limit": args.metric_time_limit},
+    )
     print("Gamma:\n", result[0])
     print("Targets:", result[1])
     print("MIP gap, objective, runtime:", result[2:])
     print("d_cpdag, environment target error, FDP, TDP:", errors)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

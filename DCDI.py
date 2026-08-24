@@ -30,37 +30,37 @@ from typing import Any, Dict, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
+from src.main_experiment_cli import (
+    add_main_data_arguments,
+    instance_summary,
+    load_cli_instance,
+    selected_method_seed,
+    wall_time_limit,
+)
+from src.main_experiment_data import MainExperimentDataError
+
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 DEFAULT_DCDI_PATH = PROJECT_ROOT / "external" / "dcdi"
+DCDI_SOURCE_URL = "https://github.com/slachapelle/dcdi"
 DCDI_COMMIT = "594d328eae7795785e0d1a1138945e28a4fec037"
 COMPLETION_FILENAME = "adapter_complete.json"
 DEFAULT_HIDDEN_DIM = 8
 DEFAULT_MU_INIT = 1e-2
-
-# DCDI's final reporting calls R-backed CDT metrics after saving the learned
-# graph.  The project evaluates results itself, so the subprocess replaces only
-# those reporting functions; the model, objective, and optimization are
-# untouched.
-_UPSTREAM_LAUNCHER = """\
-import runpy
-import sys
-
-checkout, entrypoint = sys.argv[1:3]
-arguments = sys.argv[3:]
-sys.path.insert(0, checkout)
-import cdt.metrics as metrics
-metrics.SID = lambda *args, **kwargs: 0.0
-metrics.SHD_CPDAG = lambda *args, **kwargs: 0.0
+RUNTIME_PROBE_TIMEOUT = 60.0
+DCDI_PLOT_COMPATIBILITY_VERSION = "matplotlib-padding-to-pad_inches-v1"
+_DCDI_PLOT_COMPATIBILITY = '''"""Plot-only compatibility for the unmodified DCDI author source."""
 from matplotlib.figure import Figure
-_savefig = Figure.savefig
-def _savefig_without_removed_padding(self, *args, **kwargs):
-    kwargs.pop("padding", None)
-    return _savefig(self, *args, **kwargs)
-Figure.savefig = _savefig_without_removed_padding
-sys.argv = [entrypoint] + arguments
-runpy.run_path(entrypoint, run_name="__main__")
-"""
+
+_original_savefig = Figure.savefig
+
+def _savefig_with_legacy_padding(self, *args, **kwargs):
+    if "padding" in kwargs:
+        kwargs.setdefault("pad_inches", kwargs.pop("padding"))
+    return _original_savefig(self, *args, **kwargs)
+
+Figure.savefig = _savefig_with_legacy_padding
+'''
 
 
 class DCDIError(RuntimeError):
@@ -148,7 +148,7 @@ def _validate_checkout(path: Union[str, os.PathLike[str]]) -> Tuple[Path, bool]:
         )
 
     status = subprocess.run(
-        ["git", "-C", str(checkout), "status", "--porcelain", "--untracked-files=no"],
+        ["git", "-C", str(checkout), "status", "--porcelain", "--untracked-files=all"],
         check=True,
         capture_output=True,
         text=True,
@@ -156,7 +156,18 @@ def _validate_checkout(path: Union[str, os.PathLike[str]]) -> Tuple[Path, bool]:
     dirty = bool(status.strip())
     if dirty:
         raise DCDIError(
-            "DCDI checkout has tracked local modifications; use a clean pinned checkout"
+            "DCDI checkout has local modifications or untracked files; use the clean "
+            "pinned author checkout"
+        )
+    compiled_overrides = [
+        path
+        for suffix in ("*.so", "*.pyd", "*.dylib")
+        for path in checkout.rglob(suffix)
+    ]
+    if compiled_overrides:
+        raise DCDIError(
+            "DCDI checkout contains an ignored compiled module that could override "
+            f"the author source: {compiled_overrides[0]}"
         )
     return checkout, dirty
 
@@ -175,6 +186,175 @@ def _resolve_python(path: Union[str, os.PathLike[str]]) -> Path:
     if not resolved.is_file() or not os.access(resolved, os.X_OK):
         raise FileNotFoundError(f"Python interpreter is not executable: {resolved}")
     return resolved
+
+
+def _validate_official_runtime(
+    interpreter: Path, rscript_executable: Union[str, os.PathLike[str]]
+) -> Dict[str, Any]:
+    """Check dependencies required by the authors' unmodified entry point.
+
+    This checks that the upstream imports and R packages are available and
+    records their actual versions. It deliberately does not enforce package
+    version equality. The final upstream report calls ``pcalg`` and ``SID``.
+    """
+    rscript_value = os.fspath(rscript_executable)
+    rscript_candidate = Path(rscript_value).expanduser()
+    if rscript_candidate.is_absolute() or rscript_candidate.parent != Path("."):
+        rscript = str(Path(os.path.abspath(rscript_candidate)))
+    else:
+        rscript = shutil.which(rscript_value) or ""
+    if not rscript or not Path(rscript).is_file() or not os.access(rscript, os.X_OK):
+        raise DCDIError(
+            f"Rscript executable not found: {rscript_value}; the unmodified DCDI "
+            "reporting step requires R with the pcalg and SID packages"
+        )
+    if Path(rscript).name != "Rscript":
+        raise DCDIError(
+            "the selected R executable must be named Rscript because upstream CDT "
+            "invokes that program name directly"
+        )
+    probe_environment = os.environ.copy()
+    probe_environment["PATH"] = os.pathsep.join(
+        [str(Path(rscript).parent), probe_environment.get("PATH", "")]
+    )
+
+    runtime_probe = (
+        "import hashlib,importlib,importlib.metadata as m,json,platform,re,sys;"
+        "modules={'numpy':'numpy','scipy':'scipy','pandas':'pandas',"
+        "'matplotlib':'matplotlib','seaborn':'seaborn','networkx':'networkx',"
+        "'scikit-learn':'sklearn','torch':'torch','cdt':'cdt'};"
+        "_=[importlib.import_module(v) for v in modules.values()];"
+        "env={re.sub(r'[-_.]+','-',d.metadata['Name']).lower():d.version "
+        "for d in m.distributions() if d.metadata.get('Name')};"
+        "env=dict(sorted(env.items()));"
+        "frozen=json.dumps(env,sort_keys=True,separators=(',',':'));"
+        "print(json.dumps({'python':platform.python_version(),"
+        "'executable':sys.executable,'packages':{n:m.version(n) for n in modules},"
+        "'resolved_environment':{'distributions':env,"
+        "'sha256':hashlib.sha256(frozen.encode()).hexdigest()}},"
+        "sort_keys=True))"
+    )
+    try:
+        probe_output = subprocess.run(
+            [str(interpreter), "-c", runtime_probe],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=RUNTIME_PROBE_TIMEOUT,
+            env=probe_environment,
+        )
+        python_runtime = json.loads(probe_output.stdout.splitlines()[-1])
+    except subprocess.TimeoutExpired as error:
+        raise DCDIError(
+            f"DCDI Python runtime check exceeded {RUNTIME_PROBE_TIMEOUT:g} seconds"
+        ) from error
+    except (OSError, subprocess.CalledProcessError) as error:
+        detail = getattr(error, "stderr", "") or ""
+        raise DCDIError(
+            "the DCDI interpreter is missing a required official-runtime package; "
+            "install requirements-dcdi.txt in the active environment"
+            f"{': ' + detail.strip()[-2000:] if detail.strip() else ''}"
+        ) from error
+    except (json.JSONDecodeError, IndexError, KeyError, TypeError) as error:
+        raise DCDIError("could not identify the active DCDI Python runtime") from error
+    r_probe = (
+        'pkgs <- c("pcalg", "SID"); '
+        'missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly=TRUE)]; '
+        'if (length(missing)) { '
+        'write(paste("missing R packages:", paste(missing, collapse=", ")), stderr()); '
+        'quit(status=2L) }; '
+        'ip <- installed.packages(); '
+        'entries <- sort(paste(ip[,"Package"], ip[,"Version"], sep="==")); '
+        'cat(as.character(packageVersion("pcalg")), "\\n", '
+        'as.character(packageVersion("SID")), "\\n", '
+        'R.version.string, "\\n", '
+        'paste(entries, collapse="\\n"), sep="")'
+    )
+    try:
+        versions = subprocess.run(
+            [rscript, "--vanilla", "-e", r_probe],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=RUNTIME_PROBE_TIMEOUT,
+        ).stdout.splitlines()
+    except subprocess.TimeoutExpired as error:
+        raise DCDIError(
+            f"DCDI R runtime check exceeded {RUNTIME_PROBE_TIMEOUT:g} seconds"
+        ) from error
+    except (OSError, subprocess.CalledProcessError) as error:
+        detail = getattr(error, "stderr", "") or ""
+        raise DCDIError(
+            "the unmodified DCDI reporting step requires the R packages pcalg "
+            f"and SID{': ' + detail.strip() if detail.strip() else ''}"
+        ) from error
+    if len(versions) < 3:
+        raise DCDIError("could not determine the installed pcalg and SID versions")
+    r_distributions = {}
+    for entry in versions[3:]:
+        if "==" in entry:
+            name, version = entry.split("==", 1)
+            r_distributions[name] = version
+    r_distributions = dict(sorted(r_distributions.items()))
+    r_payload = json.dumps(
+        r_distributions, sort_keys=True, separators=(",", ":")
+    ).encode()
+    return {
+        "python_version": python_runtime["python"],
+        "python_executable": python_runtime["executable"],
+        "python_packages": python_runtime["packages"],
+        "resolved_environment": python_runtime["resolved_environment"],
+        # Keep the selected symlink path. Upstream CDT launches the literal
+        # command name ``Rscript``, so PATH must contain the selected path's
+        # directory rather than only the resolved target's directory.
+        "rscript": str(Path(os.path.abspath(rscript))),
+        "rscript_realpath": str(Path(rscript).resolve()),
+        "pcalg_version": versions[0],
+        "sid_version": versions[1],
+        "r_version": versions[2],
+        "resolved_r_environment": {
+            "distributions": r_distributions,
+            "sha256": hashlib.sha256(r_payload).hexdigest(),
+        },
+    }
+
+
+def validate_official_install(
+    dcdi_path: Union[str, os.PathLike[str]] = DEFAULT_DCDI_PATH,
+    *,
+    rscript: Union[str, os.PathLike[str]] = "Rscript",
+) -> Dict[str, Any]:
+    """Validate and describe the exact author checkout and active runtime."""
+    checkout, _ = _validate_checkout(dcdi_path)
+    interpreter = _resolve_python(sys.executable)
+    runtime = _validate_official_runtime(interpreter, rscript)
+    return {
+        "source_url": DCDI_SOURCE_URL,
+        "source_commit": DCDI_COMMIT,
+        "checkout": str(checkout),
+        **runtime,
+    }
+
+
+def _official_command(
+    interpreter: Path, checkout: Path, arguments: Sequence[str]
+) -> list[str]:
+    """Build a direct call to the unmodified author entry point."""
+    return [str(interpreter), str(checkout / "main.py"), *arguments]
+
+
+def _prepare_runtime_compatibility(run_path: Path) -> Path:
+    """Stage a child-only Matplotlib keyword adapter outside author source."""
+    compatibility_path = run_path / "runtime_compatibility"
+    compatibility_path.mkdir(parents=True, exist_ok=True)
+    sitecustomize = compatibility_path / "sitecustomize.py"
+    expected = _DCDI_PLOT_COMPATIBILITY
+    if sitecustomize.is_file() and sitecustomize.read_text() == expected:
+        return compatibility_path
+    temporary = sitecustomize.with_suffix(".py.tmp")
+    temporary.write_text(expected)
+    os.replace(temporary, sitecustomize)
+    return compatibility_path
 
 
 def _stage_inputs(arrays: Sequence[np.ndarray], data_path: Path) -> None:
@@ -217,11 +397,25 @@ def _configuration(
     hidden_dim: int,
     mu_init: float,
     num_train_iter: int,
+    official_runtime: Dict[str, Any],
+    dependency_lock_sha256: Optional[str],
 ) -> Dict[str, Any]:
     """Build the reproducibility manifest for a persistent fit directory."""
     return {
         "adapter": "DCDI-G-perfect-unknown",
+        "official_source_url": DCDI_SOURCE_URL,
         "dcdi_commit": DCDI_COMMIT,
+        "official_entrypoint": "main.py",
+        "official_execution": "direct_author_entrypoint_plot_compatibility_v2",
+        "runtime_compatibility": {
+            "version": DCDI_PLOT_COMPATIBILITY_VERSION,
+            "scope": "Matplotlib savefig padding keyword only",
+            "sha256": hashlib.sha256(
+                _DCDI_PLOT_COMPATIBILITY.encode()
+            ).hexdigest(),
+        },
+        "official_runtime": dict(official_runtime),
+        "dependency_lock_sha256": dependency_lock_sha256,
         "data_sha256": _data_digest(arrays),
         "environment_shapes": [list(values.shape) for values in arrays],
         "graph_penalty": float(graph_penalty),
@@ -437,7 +631,8 @@ def optimization(
     num_train_iter: int = 1_000_000,
     timeout: Optional[float] = None,
     artifact_dir: Optional[Union[str, os.PathLike[str]]] = None,
-    python_executable: Union[str, os.PathLike[str]] = sys.executable,
+    rscript: Union[str, os.PathLike[str]] = "Rscript",
+    dependency_lock_sha256: Optional[str] = None,
 ) -> Tuple[np.ndarray, np.ndarray, float, Dict[str, Any]]:
     """Fit official DCDI-G in the perfect, unknown-target setting.
 
@@ -469,10 +664,11 @@ def optimization(
     artifact_dir:
         Optional dedicated persistent run directory.  Matching completed runs
         are reused after their manifest and output shapes are validated.
-    python_executable:
-        Python interpreter containing DCDI's dependencies, normally the active
-        interpreter or the project's ``.venv-dcdi`` interpreter.
-
+    rscript:
+        Rscript executable used by the unmodified upstream reporting step.
+    dependency_lock_sha256:
+        Optional hash of the caller's dependency lock. It becomes part of a
+        persistent artifact's identity, preventing reuse under another lock.
     Returns
     -------
     dag, targets, fit_seconds, metadata
@@ -496,7 +692,8 @@ def optimization(
             raise ValueError("DCDI normalization requires every variable to vary")
 
     checkout, dirty = _validate_checkout(dcdi_path)
-    interpreter = _resolve_python(python_executable)
+    interpreter = _resolve_python(sys.executable)
+    official_runtime = _validate_official_runtime(interpreter, rscript)
     configuration = _configuration(
         arrays,
         graph_penalty,
@@ -508,6 +705,8 @@ def optimization(
         hidden_dim,
         mu_init,
         num_train_iter,
+        official_runtime,
+        dependency_lock_sha256,
     )
 
     temporary: Optional[tempfile.TemporaryDirectory[str]] = None
@@ -552,6 +751,7 @@ def optimization(
             # single artifact nor an apparent pair is safe to reuse.
             quarantined_outputs = list(_quarantine_outputs(run_path))
         _stage_inputs(arrays, data_path)
+        compatibility_path = _prepare_runtime_compatibility(run_path)
 
         arguments = [
             "--train",
@@ -591,14 +791,22 @@ def optimization(
         if float_precision:
             arguments.append("--float")
 
-        command = [
-            str(interpreter),
-            "-c",
-            _UPSTREAM_LAUNCHER,
-            str(checkout),
-            str(checkout / "main.py"),
-            *arguments,
-        ]
+        command = _official_command(interpreter, checkout, arguments)
+        upstream_environment = os.environ.copy()
+        rscript_directory = str(Path(official_runtime["rscript"]).parent)
+        upstream_environment["PATH"] = os.pathsep.join(
+            [rscript_directory, upstream_environment.get("PATH", "")]
+        )
+        # Ignore any local __pycache__ left by prior inspection and compile the
+        # clean tracked source into this run's isolated cache directory.
+        upstream_environment["PYTHONPYCACHEPREFIX"] = str(
+            run_path / "python_cache"
+        )
+        # Python imports this child-only sitecustomize before the author entry
+        # point. It only translates the removed Matplotlib plotting keyword;
+        # the DCDI checkout and all estimation code remain untouched.
+        upstream_environment["PYTHONPATH"] = str(compatibility_path)
+        upstream_environment["MPLCONFIGDIR"] = str(run_path / "matplotlib_cache")
         started = time.perf_counter()
         returncode = 0
         log_path = run_path / "dcdi.log"
@@ -608,6 +816,7 @@ def optimization(
                     completed = subprocess.run(
                         command,
                         cwd=checkout,
+                        env=upstream_environment,
                         timeout=timeout,
                         check=False,
                         stdout=log_handle,
@@ -620,7 +829,7 @@ def optimization(
                 ) from error
             except OSError as error:
                 raise DCDIError(
-                    f"cannot launch DCDI with Python interpreter {python_executable}"
+                    f"cannot launch DCDI with the active Python interpreter {interpreter}"
                 ) from error
             returncode = int(completed.returncode)
         wall_seconds = time.perf_counter() - started
@@ -659,8 +868,10 @@ def optimization(
             "upstream_returncode": returncode,
             "log_path": str(log_path) if artifact_dir is not None else None,
             "quarantined_incomplete_outputs": quarantined_outputs,
-            "upstream_reporting_metrics_disabled": True,
-            "upstream_plot_padding_compatibility": True,
+            "official_source_modified": False,
+            "local_algorithm_implementation": False,
+            "official_execution": "direct_author_entrypoint_plot_compatibility_v2",
+            "upstream_argv": command,
             "checkout_path": str(checkout),
             "checkout_dirty": dirty,
             "python_executable": str(interpreter),
@@ -678,25 +889,14 @@ def optimization(
 fit = optimization
 
 
-def _cli_path_component(value: float) -> str:
-    return (
-        f"{float(value):.12g}"
-        .replace("+", "")
-        .replace("-", "m")
-        .replace(".", "p")
-    )
-
-
 def main() -> int:
-    """Run DCDI-G on one repository synthetic dataset and print diagnostics."""
+    """Run DCDI-G on one persisted main-experiment instance."""
     parser = argparse.ArgumentParser(
         description="Run official DCDI-G with perfect, unknown interventions."
     )
-    parser.add_argument("--graph", type=int, default=1)
-    parser.add_argument("--iteration", type=int, default=6)
+    add_main_data_arguments(parser, method_seed=True)
     parser.add_argument("--graph-penalty", type=float, default=0.1)
     parser.add_argument("--target-penalty", type=float, default=1e-3)
-    parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
         "--normalize", action=argparse.BooleanOptionalAction, default=True
     )
@@ -706,50 +906,25 @@ def main() -> int:
     parser.add_argument("--mu-init", type=float, default=DEFAULT_MU_INIT)
     parser.add_argument("--max-iterations", type=int, default=1_000_000)
     parser.add_argument("--time-limit", type=float, default=3600)
-    parser.add_argument(
-        "--data-root",
-        type=Path,
-        default=PROJECT_ROOT / "data" / "SyntheticData",
-    )
+    parser.add_argument("--metric-time-limit", type=float, default=3600)
     parser.add_argument("--dcdi-root", type=Path, default=DEFAULT_DCDI_PATH)
-    parser.add_argument(
-        "--dcdi-python",
-        type=Path,
-        default=PROJECT_ROOT / ".venv-dcdi" / "bin" / "python",
-    )
+    parser.add_argument("--rscript", default="Rscript")
     parser.add_argument(
         "--artifact-dir",
         type=Path,
-        help="persistent fit directory; defaults below experiment_results/dcdi_manual",
+        help="optional persistent fit directory; omitted runs in cleaned temporary storage",
     )
     args = parser.parse_args()
-
-    from MIP import _load
+    if args.metric_time_limit <= 0 or not np.isfinite(args.metric_time_limit):
+        parser.error("metric time limit must be positive and finite")
     from src.utils import compute_errors, interventional_cpdag
-
-    artifact_dir = args.artifact_dir
-    if artifact_dir is None:
-        precision = "float32" if args.float_precision else "float64"
-        device = "gpu" if args.gpu else "cpu"
-        normalization = "normalized" if args.normalize else "raw"
-        run_name = (
-            f"lambda_{_cli_path_component(args.graph_penalty)}_"
-            f"lambdaR_{_cli_path_component(args.target_penalty)}_"
-            f"hid_{args.hidden_dim}_mu_{_cli_path_component(args.mu_init)}_"
-            f"seed_{args.seed}_{normalization}_{device}_{precision}_"
-            f"iter_{args.max_iterations}"
-        )
-        artifact_dir = (
-            PROJECT_ROOT
-            / "experiment_results"
-            / "dcdi_manual"
-            / f"graph_{args.graph}"
-            / f"trial_{args.iteration:02d}"
-            / run_name
-        )
-
-    data, _, true_dag, true_targets = _load(
-        args.data_root, args.graph, args.iteration
+    try:
+        data, true_dag, true_targets, info = load_cli_instance(args)
+    except MainExperimentDataError as error:
+        parser.error(str(error))
+    method_seed = selected_method_seed(args, info)
+    artifact_dir = (
+        None if args.artifact_dir is None else args.artifact_dir.expanduser().resolve()
     )
     dag, targets, fit_seconds, metadata = optimization(
         data,
@@ -757,7 +932,7 @@ def main() -> int:
         target_penalty=args.target_penalty,
         dcdi_path=args.dcdi_root,
         normalize_data=args.normalize,
-        random_seed=args.seed,
+        random_seed=method_seed,
         gpu=args.gpu,
         float_precision=args.float_precision,
         hidden_dim=args.hidden_dim,
@@ -765,11 +940,21 @@ def main() -> int:
         num_train_iter=args.max_iterations,
         timeout=args.time_limit,
         artifact_dir=artifact_dir,
-        python_executable=args.dcdi_python,
+        rscript=args.rscript,
     )
-    estimated_icpdag = interventional_cpdag(dag, targets)
-    errors = compute_errors(dag, targets, true_dag, true_targets)
+    with wall_time_limit(args.metric_time_limit, "metric evaluation"):
+        estimated_icpdag = interventional_cpdag(dag, targets)
+        errors = compute_errors(dag, targets, true_dag, true_targets)
 
+    print("Instance:", instance_summary(args, data, true_dag, true_targets, info))
+    print(
+        "Configuration:",
+        {"graph_penalty": args.graph_penalty,
+         "target_penalty": args.target_penalty, "method_seed": method_seed,
+         "normalize": args.normalize, "fit_time_limit": args.time_limit,
+         "metric_time_limit": args.metric_time_limit,
+         "artifact_dir": metadata["artifact_dir"]},
+    )
     print("DAG:\n", dag)
     print("I-CPDAG:\n", estimated_icpdag)
     print("Targets:\n", targets)
@@ -781,6 +966,7 @@ def main() -> int:
 
 __all__ = [
     "DCDI_COMMIT",
+    "DCDI_SOURCE_URL",
     "DEFAULT_HIDDEN_DIM",
     "DEFAULT_DCDI_PATH",
     "DEFAULT_MU_INIT",

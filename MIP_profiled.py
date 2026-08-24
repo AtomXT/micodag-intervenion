@@ -6,13 +6,21 @@ from __future__ import annotations
 import argparse
 from itertools import combinations
 from math import comb
-from pathlib import Path
 
 import gurobipy as gp
 import numpy as np
 from gurobipy import GRB
 
-from MIP import _edges, _load, _moments, estimate_moral_graph
+from MIP import _edges, _moments, estimate_moral_graph
+from src.main_experiment_cli import (
+    add_main_data_arguments,
+    instance_summary,
+    load_cli_instance,
+    main_screen_alpha,
+    primary_mip_penalty,
+    wall_time_limit,
+)
+from src.main_experiment_data import MainExperimentDataError
 from src.utils import compute_errors
 
 
@@ -88,13 +96,17 @@ def optimization(
     max_parents=None,
     configuration_limit=1_000_000,
     time_limit=None,
+    return_metadata=False,
 ):
     """Return Gamma, targets, MIP gap, objective, and runtime.
 
     If ``l_delta`` is omitted, environment ``e`` uses the intervention
     penalty ``l * weights[e]``. A supplied scalar applies the same penalty
     to every interventional environment; a vector supplies one penalty per
-    interventional environment.
+    interventional environment. ``target_status`` has one row per
+    non-observational environment; values 0/1 fix an intervention indicator
+    and -1 leaves it unknown. If ``return_metadata`` is true, a sixth return
+    value contains the solver status and bound without changing legacy calls.
     """
     if l < 0 or coefficient_bound <= 0 or not 0 < gamma_lower < gamma_upper:
         raise ValueError("penalties and Gamma bounds are invalid")
@@ -179,34 +191,126 @@ def optimization(
         gamma[j, j] = diagonal
         gamma[list(parents), j] = coefficients
         targets[:, j] = [(mask >> e) & 1 for e in range(environments - 1)]
-    return gamma, targets.tolist(), model.MIPGap, model.ObjVal, model.Runtime
+    result = gamma, targets.tolist(), model.MIPGap, model.ObjVal, model.Runtime
+    if not return_metadata:
+        return result
+
+    status_name = next(
+        (
+            name.lower()
+            for name in (
+                "LOADED", "OPTIMAL", "INFEASIBLE", "INF_OR_UNBD", "UNBOUNDED",
+                "CUTOFF", "ITERATION_LIMIT", "NODE_LIMIT", "TIME_LIMIT",
+                "SOLUTION_LIMIT", "INTERRUPTED", "NUMERIC", "SUBOPTIMAL",
+                "INPROGRESS", "USER_OBJ_LIMIT", "WORK_LIMIT", "MEM_LIMIT",
+            )
+            if getattr(GRB, name, None) == model.Status
+        ),
+        f"status_{model.Status}",
+    )
+    metadata = {
+        "solver_status_code": int(model.Status),
+        "solver_status": status_name,
+        "optimal": bool(model.Status == GRB.OPTIMAL),
+        "solution_count": int(model.SolCount),
+        "objective_bound": float(model.ObjBound),
+        "node_count": float(model.NodeCount),
+    }
+    return (*result, metadata)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--graph", type=int, default=2)
-    parser.add_argument("--iteration", type=int, default=6)
-    parser.add_argument("--lambda-graph", type=float, default=0.1)
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Run profiled PS-MIP on one persisted main-experiment instance."
+    )
+    add_main_data_arguments(parser)
+    parser.add_argument(
+        "--lambda-graph",
+        type=float,
+        help="graph penalty; omit for the primary log(N)/N setting",
+    )
     parser.add_argument(
         "--lambda-delta",
         type=float,
-        help="common target penalty; omit to use lambda_graph times each environment weight",
+        help="common target penalty; omit to use the primary graph penalty",
     )
-    parser.add_argument("--alpha", type=float, default=0.1)
+    parser.add_argument("--screen-constant", type=float, default=5.0)
     parser.add_argument("--max-parents", type=int)
-    parser.add_argument("--time-limit", type=float, default=60)
+    parser.add_argument("--configuration-limit", type=int, default=1_100_000)
+    parser.add_argument(
+        "--known-targets",
+        action="store_true",
+        help="run the main experiment's oracle target-fixation variant",
+    )
+    parser.add_argument("--threads", type=int, default=1)
+    parser.add_argument("--time-limit", type=float, default=3600)
+    parser.add_argument("--metric-time-limit", type=float, default=3600)
     args = parser.parse_args()
-
-    data, _, true_dag, true_targets = _load(
-        Path("data/SyntheticData"), args.graph, args.iteration
+    numeric_values = [
+        args.time_limit,
+        args.metric_time_limit,
+        args.screen_constant,
+        *([] if args.lambda_graph is None else [args.lambda_graph]),
+        *([] if args.lambda_delta is None else [args.lambda_delta]),
+    ]
+    if (
+        args.threads < 1
+        or not np.isfinite(numeric_values).all()
+        or args.time_limit <= 0
+        or args.metric_time_limit <= 0
+        or args.screen_constant <= 0
+        or args.configuration_limit <= 0
+        or (args.lambda_graph is not None and args.lambda_graph < 0)
+        or (args.lambda_delta is not None and args.lambda_delta < 0)
+    ):
+        parser.error(
+            "threads, limits, and screening controls must be positive and finite; "
+            "penalties must be finite and nonnegative"
+        )
+    try:
+        data, true_dag, true_targets, info = load_cli_instance(args)
+    except MainExperimentDataError as error:
+        parser.error(str(error))
+    graph_penalty = (
+        primary_mip_penalty(data)
+        if args.lambda_graph is None
+        else args.lambda_graph
     )
-    moral = estimate_moral_graph(data[0], args.alpha)
+    target_penalty = (
+        graph_penalty if args.lambda_delta is None else args.lambda_delta
+    )
+    alpha = main_screen_alpha(data, args.screen_constant)
+    moral = estimate_moral_graph(data[0], alpha)
+    gp.setParam("Threads", args.threads)
     result = optimization(
-        data, moral, args.lambda_graph, l_delta=args.lambda_delta,
-        max_parents=args.max_parents, time_limit=args.time_limit,
+        data,
+        moral,
+        graph_penalty,
+        l_delta=target_penalty,
+        target_status=true_targets if args.known_targets else None,
+        max_parents=args.max_parents,
+        configuration_limit=args.configuration_limit,
+        time_limit=args.time_limit,
+        return_metadata=True,
     )
-    errors = compute_errors(result[0], result[1], true_dag, true_targets)
+    with wall_time_limit(args.metric_time_limit, "metric evaluation"):
+        errors = compute_errors(result[0], result[1], true_dag, true_targets)
+    print("Instance:", instance_summary(args, data, true_dag, true_targets, info))
+    print(
+        "Configuration:",
+        {"screen_constant": args.screen_constant, "screen_alpha": alpha,
+         "graph_penalty": graph_penalty, "target_penalty": target_penalty,
+         "known_targets": args.known_targets, "threads": args.threads,
+         "fit_time_limit": args.time_limit,
+         "metric_time_limit": args.metric_time_limit},
+    )
     print("Gamma:\n", result[0])
     print("Targets:", result[1])
-    print("MIP gap, objective, runtime:", result[2:])
+    print("MIP gap, objective, runtime:", result[2:5])
+    print("Solver metadata:", result[5])
     print("d_cpdag, environment target error, FDP, TDP:", errors)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

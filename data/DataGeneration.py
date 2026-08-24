@@ -35,6 +35,21 @@ NOISE_VARIANCES = np.array((1.0, 2.0, 4.0), dtype=float)
 DEFAULT_OUTPUT_DIR = Path(__file__).parent / "SyntheticData"
 
 
+def edge_probability_for_multiplier(num_nodes: int, edge_multiplier: float) -> float:
+    """Translate ``edge_multiplier * p`` expected edges to a Bernoulli rate.
+
+    ``generate_ordered_dag`` samples each of the ``p * (p - 1) / 2`` possible
+    forward edges independently.  Therefore the requested expected edge count
+    ``edge_multiplier * p`` corresponds to probability
+    ``2 * edge_multiplier / (p - 1)``, capped at one.
+    """
+    if num_nodes < 2:
+        raise ValueError("num_nodes must be at least 2")
+    if not np.isfinite(edge_multiplier) or edge_multiplier < 0:
+        raise ValueError("edge_multiplier must be finite and nonnegative")
+    return min(1.0, 2.0 * float(edge_multiplier) / (num_nodes - 1))
+
+
 def parse_node_counts(value: str) -> tuple[int, ...]:
     """Parse a comma-separated list such as ``10,20,50``."""
     node_counts = tuple(int(item.strip()) for item in value.split(",") if item.strip())
@@ -128,6 +143,25 @@ def environment_covariance(
     return (covariance + covariance.T) / 2.0
 
 
+def sample_dataset(
+    covariance: np.ndarray,
+    num_samples: int,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    """Sample one zero-mean Gaussian dataset from an environment covariance."""
+    if num_samples < 1:
+        raise ValueError("num_samples must be positive")
+    covariance = np.asarray(covariance, dtype=float)
+    if covariance.ndim != 2 or covariance.shape[0] != covariance.shape[1]:
+        raise ValueError("covariance must be a square matrix")
+    return rng.multivariate_normal(
+        mean=np.zeros(covariance.shape[0], dtype=float),
+        cov=covariance,
+        size=num_samples,
+        check_valid="raise",
+    )
+
+
 def sample_datasets(
     covariance: np.ndarray,
     num_samples: int,
@@ -138,20 +172,60 @@ def sample_datasets(
         raise ValueError("sample and iteration counts must be positive")
 
     datasets: list[np.ndarray] = []
-    mean = np.zeros(covariance.shape[0], dtype=float)
-
     # The R script resets the seed to the iteration number before each draw.
     for iteration in range(1, num_iterations + 1):
         rng = np.random.default_rng(iteration)
-        data = rng.multivariate_normal(
-            mean=mean,
-            cov=covariance,
-            size=num_samples,
-            check_valid="raise",
-        )
-        datasets.append(data)
+        datasets.append(sample_dataset(covariance, num_samples, rng))
 
     return datasets
+
+
+def generate_experiment_instance(
+    num_nodes: int,
+    edge_multiplier: float,
+    *,
+    num_interventional_environments: int = 5,
+    observational_samples: int = 1000,
+    interventional_samples: int = 200,
+    seed: int = 0,
+) -> tuple[list[np.ndarray], np.ndarray, np.ndarray]:
+    """Generate one graph and its observational-first environment datasets.
+
+    This is the in-memory entry point used by the main experiment.  It reuses
+    the original ordered-DAG, coefficient, target, covariance, and stochastic
+    hard-intervention mechanisms.  The returned target matrix has one row per
+    interventional environment; there is deliberately no observational row.
+    """
+    if num_interventional_environments < 1:
+        raise ValueError("num_interventional_environments must be positive")
+    if min(observational_samples, interventional_samples) < 1:
+        raise ValueError("sample sizes must be positive")
+    if not isinstance(seed, (int, np.integer)) or seed < 0:
+        raise ValueError("seed must be a nonnegative integer")
+
+    rng = np.random.default_rng(seed)
+    edge_probability = edge_probability_for_multiplier(
+        num_nodes, edge_multiplier
+    )
+    dag = generate_ordered_dag(num_nodes, edge_probability, rng)
+    weighted_dag = assign_edge_weights(dag, rng)
+    target_sets = sample_intervention_targets(
+        num_nodes, num_interventional_environments, rng
+    )
+
+    observational_covariance = environment_covariance(
+        weighted_dag, np.empty(0, dtype=int)
+    )
+    datasets = [
+        sample_dataset(observational_covariance, observational_samples, rng)
+    ]
+    targets = np.zeros((num_interventional_environments, num_nodes), dtype=int)
+    for environment, target_set in enumerate(target_sets):
+        targets[environment, target_set] = 1
+        covariance = environment_covariance(weighted_dag, target_set)
+        datasets.append(sample_dataset(covariance, interventional_samples, rng))
+
+    return datasets, dag.astype(int), targets
 
 
 def save_edge_list(path: Path, edges: np.ndarray) -> None:

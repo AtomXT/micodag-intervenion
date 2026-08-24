@@ -1,0 +1,22 @@
+# Tested Python 3.9 compatibility environment for DCDI-G and the shared main
+# experiment. Runtime checks require package availability, not version equality.
+# The unmodified DCDI final report also requires R packages pcalg and SID.
+numpy==1.26.4
+scipy==1.13.1
+pandas==2.2.3
+# The adapter translates one removed plotting keyword without modifying DCDI.
+matplotlib==3.9.4
+seaborn==0.11.2
+networkx==3.2.1
+scikit-learn==1.6.1
+torch==2.2.2
+cdt==0.6.0
+causaldag==0.1a163
+graphical-model-learning==0.1a8
+conditional-independence==0.1a6
+graphical-models==0.1a21
+pgmpy==0.1.25
+gnies==0.3.3
+ges==1.1.1
+gies==0.0.3
+gurobipy==12.0.3
