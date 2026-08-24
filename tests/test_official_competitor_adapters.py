@@ -16,6 +16,11 @@ from experiments import run_main_experiment as main_experiment
 
 
 class DCDIOfficialSourceTests(unittest.TestCase):
+    def test_vendored_author_snapshot_matches_pinned_manifest(self):
+        checkout, dirty = DCDI._validate_checkout(DCDI.DEFAULT_DCDI_PATH)
+        self.assertEqual(checkout, DCDI.DEFAULT_DCDI_PATH.resolve())
+        self.assertFalse(dirty)
+
     def test_command_calls_author_entrypoint_directly(self):
         command = DCDI._official_command(
             Path("/usr/bin/python3"),

@@ -117,7 +117,7 @@ def _parser() -> argparse.ArgumentParser:
         "--dcdi-root",
         type=Path,
         default=PROJECT_ROOT / "external" / "dcdi",
-        help="clean checkout of the official DCDI repository",
+        help="hash-verified vendored snapshot of the official DCDI repository",
     )
     parser.add_argument(
         "--rscript",

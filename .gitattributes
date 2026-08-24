@@ -1,0 +1,2 @@
+# The vendored author snapshot is verified byte-for-byte at runtime.
+external/dcdi/** -text

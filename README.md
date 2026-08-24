@@ -92,11 +92,21 @@ A working Gurobi license is still required. Install the R packages used only
 by the unmodified DCDI reporting step:
 
 ```bash
-Rscript -e 'if (!requireNamespace("BiocManager", quietly=TRUE)) install.packages("BiocManager"); BiocManager::install(c("pcalg", "SID"), ask=FALSE)'
+Rscript --vanilla -e 'if (!requireNamespace("BiocManager", quietly=TRUE)) install.packages("BiocManager", repos="https://cloud.r-project.org"); BiocManager::install("pcalg", ask=FALSE, update=FALSE)'
+Rscript --vanilla -e 'install.packages("SID", repos="https://cloud.r-project.org")'
 ```
 
 The `pgmpy` pin is required when using Python 3.9 because current `pgmpy`
 releases require Python 3.10 or newer.
+
+Quest's Python 3.9 module is linked against the older system OpenSSL 1.0.2.
+`urllib3` 2.x refuses that SSL runtime, so the tested requirements retain the
+compatible 1.26 line. If an existing Quest environment reports this specific
+OpenSSL error, repair that environment with:
+
+```bash
+python3 -m pip install --user 'urllib3==1.26.20'
+```
 
 ### DCDI installation
 
@@ -117,10 +127,10 @@ commit, and SHA-256 digest of every included upstream file. The adapter checks
 that committed manifest and every source file before each fit, rejecting local
 changes or unexpected files without requiring nested Git metadata.
 
-The adapter verifies the exact source commit, confirms that required Python and
-R imports work, records their actual versions, and rejects tracked changes or
-untracked files before every fit. It then invokes the authors' `main.py`
-directly. No DCDI model, objective, optimizer, or reporting function is copied
+The adapter verifies the exact source manifest, confirms that required Python
+and R imports work, records their actual versions, and rejects modified,
+missing, or unexpected source files before every fit. It then invokes the
+authors' `main.py` directly. No DCDI model, objective, optimizer, or reporting function is copied
 or changed. For current Matplotlib releases, a child-process-only compatibility
 module translates the removed plotting keyword `padding` to its modern
 `pad_inches` spelling. This affects only saved plot margins; the official DCDI
@@ -139,7 +149,7 @@ The competing algorithms are not implemented in this repository:
 
 | Method | Code used by the main experiment |
 | --- | --- |
-| DCDI-G | Authors' [`slachapelle/dcdi`](https://github.com/slachapelle/dcdi) checkout at commit `594d328eae7795785e0d1a1138945e28a4fec037`, executed through its official `main.py` |
+| DCDI-G | Hash-verified minimal snapshot of the authors' [`slachapelle/dcdi`](https://github.com/slachapelle/dcdi) source at commit `594d328eae7795785e0d1a1138945e28a4fec037`, executed through its official `main.py` |
 | UT-IGSP | [`causaldag`](https://github.com/uhlerlab/causaldag) / `graphical-model-learning` author package API (tested with 0.1a163 / 0.1a8) |
 | GnIES | [First-author `gnies`](https://github.com/juangamella/gnies) package using its full `approach="greedy"` search (tested with 0.3.3) |
 | GIES oracle | Olga Kolotuhina and Juan L. Gamella's requested [`juangamella/gies`](https://github.com/juangamella/gies) Python package (tested with 0.0.3) |
@@ -149,7 +159,7 @@ output formats. PS-MIP is the proposed method in this project, so its local
 implementation is intentionally outside this competitor-source rule. Every
 result's `method_config` records the official source URL, installed package
 versions, and the R/Python executables used. Missing packages or unusable APIs
-stop before fitting, but version differences do not. Main experiment version 6
+stop before fitting, but version differences do not. Main experiment version 7
 prevents older adapter results from being silently reused.
 
 ## Main synthetic experiment
@@ -262,7 +272,7 @@ reported PS-MIP result rather than an invisible preprocessing detail.
 
 Before launching experiments, run the repository setup check. It loads the
 smallest official instance (`p=10`, `e=1`, replicate 1), checks the required
-Python packages/APIs, the clean official DCDI checkout, DCDI's R reporting
+Python packages/APIs, the hash-verified DCDI author snapshot, DCDI's R reporting
 dependencies (`pcalg` and `SID`), and the Gurobi setup, then runs one primary
 setting for all six methods. It prints the
 estimated graphs, targets, runtimes, objectives, `d_cpdag`, FDP, and TDP. It

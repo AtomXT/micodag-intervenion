@@ -339,7 +339,7 @@ def validate_official_install(
     *,
     rscript: Union[str, os.PathLike[str]] = "Rscript",
 ) -> Dict[str, Any]:
-    """Validate and describe the exact author checkout and active runtime."""
+    """Validate and describe the exact vendored author snapshot and runtime."""
     checkout, _ = _validate_checkout(dcdi_path)
     interpreter = _resolve_python(sys.executable)
     runtime = _validate_official_runtime(interpreter, rscript)
@@ -660,7 +660,8 @@ def optimization(
         DCDI's graph sparsity coefficient ``lambda`` and intervention-family
         sparsity coefficient ``lambda_R``.
     dcdi_path:
-        Clean checkout of the official DCDI repository at :data:`DCDI_COMMIT`.
+        Hash-verified snapshot of the official DCDI source at
+        :data:`DCDI_COMMIT`.
     normalize_data:
         Ask DCDI to standardize variables using its training split.
     random_seed:

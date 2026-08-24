@@ -11,6 +11,9 @@ networkx==3.2.1
 scikit-learn==1.6.1
 torch==2.2.2
 cdt==0.6.0
+# Quest's Python 3.9 module is linked against OpenSSL 1.0.2. urllib3 2.x
+# refuses that SSL runtime; the final 1.26 line remains compatible.
+urllib3==1.26.20
 causaldag==0.1a163
 graphical-model-learning==0.1a8
 conditional-independence==0.1a6
