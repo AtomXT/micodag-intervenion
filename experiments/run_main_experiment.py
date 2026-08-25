@@ -48,7 +48,7 @@ from src.main_experiment_data import (
 )
 
 
-MAIN_EXPERIMENT_VERSION = 6
+MAIN_EXPERIMENT_VERSION = 8
 COMPLETED_STATUSES = {"ok", "ok_nonoptimal"}
 FAILURE_STATUSES = {"fit_error", "metric_error"}
 
@@ -58,15 +58,21 @@ METHODS = (
     "utigsp_unknown",
     "gnies_unknown",
     "ps_mip_oracle",
+    "dcdi_g_oracle",
+    "igsp_oracle",
     "gies_oracle",
 )
-ORACLE_METHODS = {"ps_mip_oracle", "gies_oracle"}
+ORACLE_METHODS = {
+    "ps_mip_oracle", "dcdi_g_oracle", "igsp_oracle", "gies_oracle"
+}
 PRIMARY_SETTING_IDS = {
     "ps_mip_unknown": "bic_x1",
     "dcdi_g_unknown": "g0p1_t0p001",
     "utigsp_unknown": "alpha_1em05",
     "gnies_unknown": "bic_x1",
     "ps_mip_oracle": "g1",
+    "dcdi_g_oracle": "g0p1",
+    "igsp_oracle": "alpha_1em05",
     "gies_oracle": "bic_x1",
 }
 
@@ -82,6 +88,7 @@ DCDI_GRID = (
     ("g0p1_t0p01", 0.1, 0.01),
     ("g1_t0p001", 1.0, 0.001),
 )
+DCDI_ORACLE_GRAPH_PENALTIES = (0.01, 0.1, 1.0)
 SCORE_BIC_MULTIPLIERS = (0.25, 0.5, 1.0, 2.0, 4.0)
 UTIGSP_ALPHAS = (1e-5, 1e-4, 1e-3, 1e-2, 5e-2)
 
@@ -103,8 +110,22 @@ OFFICIAL_IMPLEMENTATIONS = {
         "source_version": "594d328eae7795785e0d1a1138945e28a4fec037",
         "entrypoint": "main.py",
     },
+    "dcdi_g_oracle": {
+        "name": "DCDI",
+        "source_url": "https://github.com/slachapelle/dcdi",
+        "source_version": "594d328eae7795785e0d1a1138945e28a4fec037",
+        "entrypoint": "main.py",
+    },
     "utigsp_unknown": {
         "name": "UT-IGSP",
+        "source_url": "https://github.com/uhlerlab/causaldag",
+        "tested_version": "causaldag==0.1a163",
+        "source_commit": "c664971bbffa3a42097564d58a92b763fe09c4f5",
+        "tested_algorithm_package": "graphical-model-learning==0.1a8",
+        "algorithm_source_url": "https://github.com/uhlerlab/graphical_model_learning",
+    },
+    "igsp_oracle": {
+        "name": "IGSP",
         "source_url": "https://github.com/uhlerlab/causaldag",
         "tested_version": "causaldag==0.1a163",
         "source_commit": "c664971bbffa3a42097564d58a92b763fe09c4f5",
@@ -223,12 +244,12 @@ def _probe_selected_python_apis(methods):
     statements = ["import numpy, scipy"]
     if selected & {"ps_mip_unknown", "ps_mip_oracle"}:
         statements.append("import gurobipy, sklearn")
-    if "utigsp_unknown" in selected:
+    if selected & {"utigsp_unknown", "igsp_oracle"}:
         statements.append(
             "from causaldag import (MemoizedCI_Tester, "
             "MemoizedInvarianceTester, gauss_invariance_suffstat, "
             "gauss_invariance_test, partial_correlation_suffstat, "
-            "partial_correlation_test, unknown_target_igsp)"
+            "partial_correlation_test, igsp, unknown_target_igsp)"
         )
     if "gnies_unknown" in selected:
         statements.extend(
@@ -280,6 +301,8 @@ def _validate_competitor_runtime(args):
     selected = set(args.methods)
     if "utigsp_unknown" in selected:
         runtime["utigsp_unknown"] = identified_python
+    if "igsp_oracle" in selected:
+        runtime["igsp_oracle"] = identified_python
     if "gnies_unknown" in selected:
         runtime["gnies_unknown"] = identified_python
     if "gies_oracle" in selected:
@@ -291,7 +314,8 @@ def _validate_competitor_runtime(args):
             raise OfficialRuntimeError(
                 f"requested Python GIES runtime check failed: {error}"
             ) from error
-    if "dcdi_g_unknown" in selected:
+    selected_dcdi = selected & {"dcdi_g_unknown", "dcdi_g_oracle"}
+    if selected_dcdi:
         from DCDI import validate_official_install
 
         try:
@@ -302,7 +326,8 @@ def _validate_competitor_runtime(args):
             raise OfficialRuntimeError(
                 f"official DCDI runtime check failed: {error}"
             ) from error
-        runtime["dcdi_g_unknown"] = dcdi_runtime
+        for method in selected_dcdi:
+            runtime[method] = dcdi_runtime
     return runtime
 
 
@@ -442,7 +467,9 @@ def method_setting_ids(method):
         return [f"g{_number_id(x)}" for x in PS_ORACLE_GRAPH_MULTIPLIERS]
     if method == "dcdi_g_unknown":
         return [setting_id for setting_id, _, _ in DCDI_GRID]
-    if method == "utigsp_unknown":
+    if method == "dcdi_g_oracle":
+        return [f"g{_number_id(x)}" for x in DCDI_ORACLE_GRAPH_PENALTIES]
+    if method in {"utigsp_unknown", "igsp_oracle"}:
         return [f"alpha_{_number_id(x)}" for x in UTIGSP_ALPHAS]
     if method in {"gnies_unknown", "gies_oracle"}:
         return [f"bic_x{_number_id(x)}" for x in SCORE_BIC_MULTIPLIERS]
@@ -491,7 +518,20 @@ def _method_settings(method, data):
             }
             for setting_id, graph_penalty, target_penalty in DCDI_GRID
         ]
-    if method == "utigsp_unknown":
+    if method == "dcdi_g_oracle":
+        return [
+            {
+                "setting_id": f"g{_number_id(graph_penalty)}",
+                "tuning_parameter": "graph_penalty",
+                "tuning_value": graph_penalty,
+                "graph_penalty": graph_penalty,
+                # The authors' known-target path does not estimate or penalize
+                # an intervention family.
+                "target_penalty": 0.0,
+            }
+            for graph_penalty in DCDI_ORACLE_GRAPH_PENALTIES
+        ]
+    if method in {"utigsp_unknown", "igsp_oracle"}:
         return [
             {
                 "setting_id": f"alpha_{_number_id(alpha)}",
@@ -537,7 +577,7 @@ def _declared_settings(method, data, setting, args):
         # larger requested budget intentionally triggers a fresh fit.
         "fit_time_limit": float(args.time_limit),
         "metric_time_limit": float(args.metric_time_limit),
-        "threads": int(args.threads),
+        "threads": 8,
     }
     if method in {"ps_mip_unknown", "ps_mip_oracle"}:
         config = {
@@ -558,7 +598,8 @@ def _declared_settings(method, data, setting, args):
             setting["target_penalty"],
             config,
         )
-    if method == "dcdi_g_unknown":
+    if method in {"dcdi_g_unknown", "dcdi_g_oracle"}:
+        known_targets = method == "dcdi_g_oracle"
         config = {
             **common,
             **OFFICIAL_IMPLEMENTATIONS[method],
@@ -567,9 +608,9 @@ def _declared_settings(method, data, setting, args):
             "execution": "direct_author_entrypoint_plot_keyword_compatibility",
             "model": "DCDI-G",
             "intervention_type": "perfect",
-            "intervention_knowledge": "unknown",
+            "intervention_knowledge": "known" if known_targets else "unknown",
             "graph_penalty": setting["graph_penalty"],
-            "target_penalty": setting["target_penalty"],
+            "target_penalty": None if known_targets else setting["target_penalty"],
             "hidden_dim": DCDI_HIDDEN_DIM,
             "mu_init": DCDI_MU_INIT,
             "max_iterations": DCDI_MAX_ITERATIONS,
@@ -582,12 +623,17 @@ def _declared_settings(method, data, setting, args):
             "rscript": str(args.rscript),
         }
         return (
-            "compact_reference_penalty_grid",
+            (
+                "dcdi_graph_penalty_grid"
+                if known_targets
+                else "compact_reference_penalty_grid"
+            ),
             setting["graph_penalty"],
-            setting["target_penalty"],
+            "" if known_targets else setting["target_penalty"],
             config,
         )
-    if method == "utigsp_unknown":
+    if method in {"utigsp_unknown", "igsp_oracle"}:
+        known_targets = method == "igsp_oracle"
         config = {
             **common,
             **OFFICIAL_IMPLEMENTATIONS[method],
@@ -597,6 +643,7 @@ def _declared_settings(method, data, setting, args):
             "alpha_inv": setting["alpha"],
             "depth": UTIGSP_DEPTH,
             "nruns": UTIGSP_NRUNS,
+            "known_targets": known_targets,
         }
         return "alpha_grid", "", "", config
     if method == "gnies_unknown":
@@ -647,7 +694,7 @@ def run_our_method(data, args, setting, known_targets=None):
         known_targets = known_targets.astype(int)
 
     gp.setParam("OutputFlag", 0)
-    gp.setParam("Threads", args.threads)
+    gp.setParam("Threads", 8)
     started = time.perf_counter()
     moral = estimate_moral_graph(data[0], _screen_alpha(data))
     screen_edges, screen_parent_sets = _screen_statistics(moral)
@@ -684,25 +731,50 @@ def run_our_method(data, args, setting, known_targets=None):
     }
 
 
-def _run_dcdi(data, args, setting, p, edge_multiplier, replicate, seed):
+def _run_dcdi(
+    data,
+    args,
+    setting,
+    p,
+    edge_multiplier,
+    replicate,
+    seed,
+    known_targets=None,
+):
     from DCDI import optimization
     from src.utils import interventional_cpdag
 
+    intervention_knowledge = "known" if known_targets is not None else "unknown"
+    target_identity = ""
+    if known_targets is not None:
+        target_identity = hashlib.sha256(
+            np.ascontiguousarray(known_targets, dtype=np.uint8).tobytes()
+        ).hexdigest()[:12]
+    target_identity = target_identity or "learned"
+    runtime_key = (
+        "dcdi_g_oracle" if known_targets is not None else "dcdi_g_unknown"
+    )
     if getattr(args, "transient_artifacts", False):
         artifact_dir = None
     else:
         runtime_identity = hashlib.sha256(
             json.dumps(
-                args.official_runtime["dcdi_g_unknown"],
+                args.official_runtime[runtime_key],
                 sort_keys=True,
                 separators=(",", ":"),
             ).encode()
         ).hexdigest()[:12]
+        target_component = (
+            ""
+            if known_targets is not None
+            else f"lambdaR_{setting['target_penalty']:g}_"
+        )
         dcdi_configuration = (
             "official_direct_594d328_"
+            f"targets_{intervention_knowledge}_{target_identity}_"
             f"lock_{DEPENDENCY_LOCK_SHA256[:12]}_runtime_{runtime_identity}_"
             f"lambda_{setting['graph_penalty']:g}_"
-            f"lambdaR_{setting['target_penalty']:g}_"
+            f"{target_component}"
             f"hid_{DCDI_HIDDEN_DIM}_mu_{DCDI_MU_INIT:g}_"
             f"iter_{DCDI_MAX_ITERATIONS}"
         )
@@ -729,11 +801,12 @@ def _run_dcdi(data, args, setting, p, edge_multiplier, replicate, seed):
         artifact_dir=artifact_dir,
         rscript=args.rscript,
         dependency_lock_sha256=DEPENDENCY_LOCK_SHA256,
+        known_targets=known_targets,
     )
     targets = np.asarray(targets, dtype=int)
     return {
         "estimated_icpdag": interventional_cpdag(dag, targets),
-        "estimated_targets": targets,
+        "estimated_targets": None if known_targets is not None else targets,
         # The adapter preserves upstream's original training time when a
         # completed artifact is reused; wall time here would then be near zero.
         "fit_seconds": upstream_seconds,
@@ -761,6 +834,27 @@ def _run_utigsp(data, args, setting, seed):
     return {
         "estimated_icpdag": interventional_cpdag(dag, targets),
         "estimated_targets": targets,
+        "fit_seconds": time.perf_counter() - started,
+    }
+
+
+def _run_igsp(data, true_targets, args, setting, seed):
+    from IGSP import fit
+    from src.utils import interventional_cpdag
+
+    started = time.perf_counter()
+    with _time_limit(args.time_limit, "IGSP fit"):
+        dag = fit(
+            data,
+            true_targets,
+            alpha=setting["alpha"],
+            alpha_inv=setting["alpha"],
+            depth=UTIGSP_DEPTH,
+            nruns=UTIGSP_NRUNS,
+            seed=seed,
+        )
+    return {
+        "estimated_icpdag": interventional_cpdag(dag, true_targets),
         "fit_seconds": time.perf_counter() - started,
     }
 
@@ -807,7 +901,7 @@ def _run_method(
     method, data, true_targets, args, setting, p, edge_multiplier, replicate, seed
 ):
     # Unknown-target calls receive data only. Truth crosses the method boundary
-    # only in the two explicitly named oracle branches.
+    # only in the explicitly named oracle branches.
     if method == "ps_mip_unknown":
         return run_our_method(data, args, setting, known_targets=None)
     if method == "dcdi_g_unknown":
@@ -820,6 +914,19 @@ def _run_method(
         return _run_gnies(data, args, setting)
     if method == "ps_mip_oracle":
         return run_our_method(data, args, setting, known_targets=true_targets)
+    if method == "dcdi_g_oracle":
+        return _run_dcdi(
+            data,
+            args,
+            setting,
+            p,
+            edge_multiplier,
+            replicate,
+            seed,
+            known_targets=true_targets,
+        )
+    if method == "igsp_oracle":
+        return _run_igsp(data, true_targets, args, setting, seed)
     if method == "gies_oracle":
         return _run_gies(data, true_targets, args, setting)
     raise ValueError(f"unknown method {method}")
@@ -1069,7 +1176,6 @@ def _parse_args():
         ),
     )
     parser.add_argument("--seed", type=int, default=DEFAULT_MASTER_SEED)
-    parser.add_argument("--threads", type=int, default=1)
     parser.add_argument(
         "--time-limit",
         type=float,
@@ -1108,8 +1214,8 @@ def _parse_args():
         help="run primary settings on persisted p=10, e=1, replicate 1 data",
     )
     args = parser.parse_args()
-    if args.num_replicates < 1 or args.threads < 1:
-        parser.error("num-replicates and threads must be positive")
+    if args.num_replicates < 1:
+        parser.error("num-replicates must be positive")
     if args.num_replicates > DEFAULT_NUM_REPLICATES:
         parser.error(
             f"--num-replicates cannot exceed the persisted design's "

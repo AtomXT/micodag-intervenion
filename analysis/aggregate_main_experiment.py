@@ -78,6 +78,8 @@ METHOD_LABELS = {
     "utigsp_unknown": "UT-IGSP",
     "gnies_unknown": "GnIES",
     "ps_mip_oracle": "PS-MIP (oracle)",
+    "dcdi_g_oracle": "DCDI-G (oracle)",
+    "igsp_oracle": "IGSP (oracle)",
     "gies_oracle": "GIES (oracle)",
 }
 STYLES = {
@@ -86,6 +88,8 @@ STYLES = {
     "utigsp_unknown": ("tab:red", "D", "-"),
     "gnies_unknown": ("tab:orange", "s", "-"),
     "ps_mip_oracle": ("tab:cyan", "^", "--"),
+    "dcdi_g_oracle": ("tab:purple", "X", "--"),
+    "igsp_oracle": ("tab:brown", "<", "--"),
     "gies_oracle": ("tab:green", "v", "--"),
 }
 
@@ -98,8 +102,9 @@ def _result_paths(inputs):
             paths.add(path)
         elif path.is_dir():
             # DCDI artifacts contain staged CSVs below nested directories; only
-            # result fragments placed directly in an input directory are valid.
+            # direct fragments and one method-directory level are valid.
             paths.update(candidate.resolve() for candidate in path.glob("*.csv"))
+            paths.update(candidate.resolve() for candidate in path.glob("*/*.csv"))
     return sorted(paths)
 
 

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Adapter for the official DCDI-G implementation with unknown targets.
+"""Adapter for the official DCDI-G implementation with known or unknown targets.
 
 The upstream source is intentionally kept outside this repository's Python
 package.  By default, this module expects the official repository at
 ``external/dcdi`` checked out at :data:`DCDI_COMMIT`.
 
-Only data values and environment labels are passed to DCDI.  The upstream
-loader also requires ground-truth DAG and intervention files, so this adapter
-stages an all-zero DAG and blank target rows rather than exposing simulation
-truth to the estimator.
+The unknown-target path receives only data values and environment labels; its
+required DAG and intervention files contain zero/blank placeholders.  The
+known-target path deliberately stages the supplied intervention masks while
+continuing to hide the simulation DAG.
 """
 
 from __future__ import annotations
@@ -372,8 +372,28 @@ def _prepare_runtime_compatibility(run_path: Path) -> Path:
     return compatibility_path
 
 
-def _stage_inputs(arrays: Sequence[np.ndarray], data_path: Path) -> None:
-    """Write DCDI's required files without staging any ground truth."""
+def _validate_known_targets(
+    arrays: Sequence[np.ndarray], known_targets: Optional[Any]
+) -> Optional[np.ndarray]:
+    """Validate the environment target matrix used by DCDI's known mode."""
+    if known_targets is None:
+        return None
+    targets = np.asarray(known_targets)
+    expected = (len(arrays) - 1, arrays[0].shape[1])
+    if targets.shape != expected or not np.isin(targets, (0, 1)).all():
+        raise ValueError(
+            "known_targets must be binary with shape "
+            f"{expected}; do not include an observational row"
+        )
+    return np.ascontiguousarray(targets, dtype=int)
+
+
+def _stage_inputs(
+    arrays: Sequence[np.ndarray],
+    data_path: Path,
+    known_targets: Optional[np.ndarray] = None,
+) -> None:
+    """Write DCDI inputs, exposing targets only in the explicit known mode."""
     data_path.mkdir(parents=True, exist_ok=True)
     p = arrays[0].shape[1]
     pooled = np.concatenate(arrays, axis=0)
@@ -385,11 +405,17 @@ def _stage_inputs(arrays: Sequence[np.ndarray], data_path: Path) -> None:
     np.save(data_path / "DAG1.npy", np.zeros((p, p), dtype=int))
     np.savetxt(data_path / "regime1.csv", regimes, fmt="%d", delimiter=",")
 
-    # The official unknown-target path ignores these masks during fitting, but
-    # DataManagerFile still insists on one CSV row per sample.
     with (data_path / "intervention1.csv").open("w", newline="") as handle:
         writer = csv.writer(handle)
-        writer.writerows([] for _ in range(len(pooled)))
+        if known_targets is None:
+            # The official unknown-target path ignores these masks during
+            # fitting, but DataManagerFile still requires one row per sample.
+            writer.writerows([] for _ in range(len(pooled)))
+        else:
+            writer.writerows([] for _ in range(len(arrays[0])))
+            for environment, values in enumerate(arrays[1:]):
+                target_nodes = np.flatnonzero(known_targets[environment]).tolist()
+                writer.writerows(target_nodes for _ in range(len(values)))
 
 
 def _data_digest(arrays: Sequence[np.ndarray]) -> str:
@@ -398,6 +424,16 @@ def _data_digest(arrays: Sequence[np.ndarray]) -> str:
     for values in arrays:
         digest.update(np.asarray(values.shape, dtype="<i8").tobytes())
         digest.update(np.asarray(values, dtype="<f8", order="C").tobytes())
+    return digest.hexdigest()
+
+
+def _target_digest(targets: Optional[np.ndarray]) -> Optional[str]:
+    """Hash known targets without placing their full matrix in a manifest."""
+    if targets is None:
+        return None
+    digest = hashlib.sha256()
+    digest.update(np.asarray(targets.shape, dtype="<i8").tobytes())
+    digest.update(np.asarray(targets, dtype="u1", order="C").tobytes())
     return digest.hexdigest()
 
 
@@ -414,10 +450,12 @@ def _configuration(
     num_train_iter: int,
     official_runtime: Dict[str, Any],
     dependency_lock_sha256: Optional[str],
+    known_targets: Optional[np.ndarray] = None,
 ) -> Dict[str, Any]:
     """Build the reproducibility manifest for a persistent fit directory."""
+    intervention_knowledge = "known" if known_targets is not None else "unknown"
     return {
-        "adapter": "DCDI-G-perfect-unknown",
+        "adapter": f"DCDI-G-perfect-{intervention_knowledge}",
         "official_source_url": DCDI_SOURCE_URL,
         "dcdi_commit": DCDI_COMMIT,
         "official_entrypoint": "main.py",
@@ -433,6 +471,8 @@ def _configuration(
         "dependency_lock_sha256": dependency_lock_sha256,
         "data_sha256": _data_digest(arrays),
         "environment_shapes": [list(values.shape) for values in arrays],
+        "intervention_knowledge": intervention_knowledge,
+        "known_targets_sha256": _target_digest(known_targets),
         "graph_penalty": float(graph_penalty),
         "target_penalty": float(target_penalty),
         "normalize_data": bool(normalize_data),
@@ -449,8 +489,9 @@ def _write_or_check_manifest(run_path: Path, configuration: Dict[str, Any]) -> b
     """Write/check a run manifest and report whether a completion marker exists."""
     run_path.mkdir(parents=True, exist_ok=True)
     manifest_path = run_path / "adapter_config.json"
-    dag_path = run_path / "experiment" / "train" / "DAG.npy"
-    target_path = run_path / "experiment" / "train" / "gumbel_interv.npy"
+    dag_path, target_path, _ = _output_paths(
+        run_path, configuration["intervention_knowledge"]
+    )
     completion_path = run_path / COMPLETION_FILENAME
 
     if manifest_path.exists():
@@ -474,11 +515,18 @@ def _write_or_check_manifest(run_path: Path, configuration: Dict[str, Any]) -> b
     return completion_path.exists()
 
 
-def _output_paths(run_path: Path) -> Tuple[Path, Path, Path]:
+def _output_paths(
+    run_path: Path, intervention_knowledge: str = "unknown"
+) -> Tuple[Path, Path, Path]:
     train_path = run_path / "experiment" / "train"
+    target_name = (
+        "known_targets.npy"
+        if intervention_knowledge == "known"
+        else "gumbel_interv.npy"
+    )
     return (
         train_path / "DAG.npy",
-        train_path / "gumbel_interv.npy",
+        train_path / target_name,
         run_path / COMPLETION_FILENAME,
     )
 
@@ -491,8 +539,10 @@ def _file_digest(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _completion_payload(run_path: Path) -> Dict[str, Any]:
-    dag_path, target_path, _ = _output_paths(run_path)
+def _completion_payload(
+    run_path: Path, intervention_knowledge: str = "unknown"
+) -> Dict[str, Any]:
+    dag_path, target_path, _ = _output_paths(run_path, intervention_knowledge)
     dag_stat = dag_path.stat()
     target_stat = target_path.stat()
     if target_stat.st_mtime_ns < dag_stat.st_mtime_ns:
@@ -508,18 +558,24 @@ def _completion_payload(run_path: Path) -> Dict[str, Any]:
     }
 
 
-def _write_completion_marker(run_path: Path) -> None:
+def _write_completion_marker(
+    run_path: Path, intervention_knowledge: str = "unknown"
+) -> None:
     """Atomically mark a pair of validated final upstream outputs complete."""
-    _, _, completion_path = _output_paths(run_path)
-    payload = _completion_payload(run_path)
+    _, _, completion_path = _output_paths(run_path, intervention_knowledge)
+    payload = _completion_payload(run_path, intervention_knowledge)
     temporary = completion_path.with_suffix(".json.tmp")
     temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
     os.replace(temporary, completion_path)
 
 
-def _validate_completion_marker(run_path: Path) -> None:
+def _validate_completion_marker(
+    run_path: Path, intervention_knowledge: str = "unknown"
+) -> None:
     """Require a marker whose hashes match the completed output pair."""
-    dag_path, target_path, completion_path = _output_paths(run_path)
+    dag_path, target_path, completion_path = _output_paths(
+        run_path, intervention_knowledge
+    )
     if not dag_path.is_file() or not target_path.is_file():
         raise DCDIError("completed DCDI cache is missing an output artifact")
     try:
@@ -536,9 +592,15 @@ def _validate_completion_marker(run_path: Path) -> None:
         raise DCDIError("cached DCDI targets do not match their completion marker")
 
 
-def _quarantine_outputs(run_path: Path) -> Sequence[str]:
+def _quarantine_outputs(
+    run_path: Path, intervention_knowledge: str = "unknown"
+) -> Sequence[str]:
     """Move incomplete/corrupt adapter outputs aside so upstream can retry."""
-    existing = [path for path in _output_paths(run_path) if path.exists()]
+    existing = [
+        path
+        for path in _output_paths(run_path, intervention_knowledge)
+        if path.exists()
+    ]
     if not existing:
         return []
     quarantine_path = run_path / "incomplete" / str(time.time_ns())
@@ -581,15 +643,20 @@ def _is_acyclic(dag: np.ndarray) -> bool:
 
 
 def _read_outputs(
-    experiment_path: Path, p: int, num_interventional: int
+    experiment_path: Path,
+    p: int,
+    num_interventional: int,
+    known_targets: Optional[np.ndarray] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Load and validate upstream artifacts in this repository's orientation."""
     train_path = experiment_path / "train"
     dag_path = train_path / "DAG.npy"
-    target_path = train_path / "gumbel_interv.npy"
+    target_path = train_path / (
+        "known_targets.npy" if known_targets is not None else "gumbel_interv.npy"
+    )
     if not dag_path.is_file() or not target_path.is_file():
         raise DCDIError(
-            f"DCDI did not produce both {dag_path.name} and {target_path.name} in {train_path}"
+            f"DCDI run is missing {dag_path.name} or {target_path.name} in {train_path}"
         )
 
     raw_dag = np.asarray(np.load(dag_path), dtype=float)
@@ -600,6 +667,19 @@ def _read_outputs(
     dag = (raw_dag > 0.5).astype(int)
     if np.any(np.diag(dag)) or not _is_acyclic(dag):
         raise DCDIError("DCDI DAG.npy is not a directed acyclic graph")
+
+    if known_targets is not None:
+        targets = np.asarray(np.load(target_path))
+        expected_shape = (num_interventional, p)
+        if targets.shape != expected_shape or not np.isin(targets, (0, 1)).all():
+            raise DCDIError(
+                f"invalid known_targets.npy: expected binary {expected_shape}, "
+                f"received {targets.shape}"
+            )
+        targets = targets.astype(int)
+        if not np.array_equal(targets, known_targets):
+            raise DCDIError("cached DCDI known targets differ from the requested targets")
+        return dag, targets
 
     probabilities = np.asarray(np.load(target_path), dtype=float)
     expected_shape = (p, num_interventional + 1)
@@ -615,6 +695,19 @@ def _read_outputs(
     # a probability below 0.5 means that variable is an intervention target.
     targets = (probabilities[:, 1:] < 0.5).T.astype(int)
     return dag, targets
+
+
+def _write_known_targets(
+    experiment_path: Path, known_targets: np.ndarray
+) -> None:
+    """Persist the adapter-supplied targets beside the upstream known-mode DAG."""
+    train_path = experiment_path / "train"
+    train_path.mkdir(parents=True, exist_ok=True)
+    destination = train_path / "known_targets.npy"
+    temporary = train_path / "known_targets.npy.tmp"
+    with temporary.open("wb") as handle:
+        np.save(handle, known_targets)
+    os.replace(temporary, destination)
 
 
 def _read_fit_seconds(experiment_path: Path, fallback: float) -> Tuple[float, str]:
@@ -648,8 +741,9 @@ def optimization(
     artifact_dir: Optional[Union[str, os.PathLike[str]]] = None,
     rscript: Union[str, os.PathLike[str]] = "Rscript",
     dependency_lock_sha256: Optional[str] = None,
+    known_targets: Optional[Any] = None,
 ) -> Tuple[np.ndarray, np.ndarray, float, Dict[str, Any]]:
-    """Fit official DCDI-G in the perfect, unknown-target setting.
+    """Fit official DCDI-G with perfect known or unknown interventions.
 
     Parameters
     ----------
@@ -659,6 +753,10 @@ def optimization(
     graph_penalty, target_penalty:
         DCDI's graph sparsity coefficient ``lambda`` and intervention-family
         sparsity coefficient ``lambda_R``.
+    known_targets:
+        Optional binary ``K x p`` environment target matrix. Supplying it runs
+        the authors' ``intervention-knowledge=known`` path; the observational
+        environment is omitted from this matrix.
     dcdi_path:
         Hash-verified snapshot of the official DCDI source at
         :data:`DCDI_COMMIT`.
@@ -693,6 +791,8 @@ def optimization(
         non-observational environment.
     """
     arrays = _as_arrays(data)
+    known_targets = _validate_known_targets(arrays, known_targets)
+    intervention_knowledge = "known" if known_targets is not None else "unknown"
     _validate_options(
         graph_penalty,
         target_penalty,
@@ -723,6 +823,7 @@ def optimization(
         num_train_iter,
         official_runtime,
         dependency_lock_sha256,
+        known_targets,
     )
 
     temporary: Optional[tempfile.TemporaryDirectory[str]] = None
@@ -754,19 +855,29 @@ def optimization(
         targets = None
         if marker_exists:
             try:
-                _validate_completion_marker(run_path)
+                _validate_completion_marker(run_path, intervention_knowledge)
                 dag, targets = _read_outputs(
-                    experiment_path, arrays[0].shape[1], len(arrays) - 1
+                    experiment_path,
+                    arrays[0].shape[1],
+                    len(arrays) - 1,
+                    known_targets,
                 )
                 cached = True
             except (DCDIError, OSError, ValueError, EOFError):
-                quarantined_outputs = list(_quarantine_outputs(run_path))
-        elif any(path.exists() for path in _output_paths(run_path)):
+                quarantined_outputs = list(
+                    _quarantine_outputs(run_path, intervention_knowledge)
+                )
+        elif any(
+            path.exists()
+            for path in _output_paths(run_path, intervention_knowledge)
+        ):
             # Upstream periodically writes targets and writes the final DAG
             # before refreshing those targets.  Without our marker, neither a
             # single artifact nor an apparent pair is safe to reuse.
-            quarantined_outputs = list(_quarantine_outputs(run_path))
-        _stage_inputs(arrays, data_path)
+            quarantined_outputs = list(
+                _quarantine_outputs(run_path, intervention_knowledge)
+            )
+        _stage_inputs(arrays, data_path, known_targets)
         compatibility_path = _prepare_runtime_compatibility(run_path)
 
         arguments = [
@@ -785,11 +896,9 @@ def optimization(
             "--intervention-type",
             "perfect",
             "--intervention-knowledge",
-            "unknown",
+            intervention_knowledge,
             "--reg-coeff",
             repr(float(graph_penalty)),
-            "--coeff-interv-sparsity",
-            repr(float(target_penalty)),
             "--random-seed",
             str(int(random_seed)),
             "--hid-dim",
@@ -800,6 +909,10 @@ def optimization(
             str(int(num_train_iter)),
             "--no-w-adjs-log",
         ]
+        if known_targets is None:
+            arguments.extend(
+                ["--coeff-interv-sparsity", repr(float(target_penalty))]
+            )
         if normalize_data:
             arguments.append("--normalize-data")
         if gpu:
@@ -857,10 +970,15 @@ def optimization(
                     f"{_diagnostic_suffix(log_path, artifact_dir is not None)}"
                 )
             try:
+                if known_targets is not None:
+                    _write_known_targets(experiment_path, known_targets)
                 dag, targets = _read_outputs(
-                    experiment_path, arrays[0].shape[1], len(arrays) - 1
+                    experiment_path,
+                    arrays[0].shape[1],
+                    len(arrays) - 1,
+                    known_targets,
                 )
-                _write_completion_marker(run_path)
+                _write_completion_marker(run_path, intervention_knowledge)
             except (DCDIError, OSError, ValueError, EOFError) as error:
                 raise DCDIError(
                     "DCDI exited without producing a valid completed result"
@@ -874,7 +992,7 @@ def optimization(
             **configuration,
             "model": "DCDI-G",
             "intervention_type": "perfect",
-            "intervention_knowledge": "unknown",
+            "intervention_knowledge": intervention_knowledge,
             "num_variables": int(arrays[0].shape[1]),
             "num_interventional_environments": len(arrays) - 1,
             "sample_sizes": [len(values) for values in arrays],

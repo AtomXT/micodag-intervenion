@@ -12,6 +12,7 @@ import numpy as np
 
 import DCDI
 import GIES
+import IGSP
 from experiments import run_main_experiment as main_experiment
 
 
@@ -48,6 +49,22 @@ class DCDIOfficialSourceTests(unittest.TestCase):
             )
             self.assertEqual((path / "intervention1.csv").read_text(), "\n" * 5)
 
+    def test_known_target_staging_repeats_exact_zero_based_masks(self):
+        data = [
+            np.arange(6.0).reshape(3, 2),
+            np.ones((2, 2)),
+            np.zeros((1, 2)),
+        ]
+        targets = np.array([[1, 0], [0, 1]], dtype=int)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            DCDI._stage_inputs(data, path, targets)
+            rows = (path / "intervention1.csv").read_text().splitlines()
+            np.testing.assert_array_equal(
+                np.load(path / "DAG1.npy"), np.zeros((2, 2), dtype=int)
+            )
+        self.assertEqual(rows, ["", "", "", "0", "0", "1"])
+
     def test_persistent_identity_includes_runtime_and_dependency_lock(self):
         config = DCDI._configuration(
             [np.ones((2, 2)), np.zeros((1, 2))],
@@ -71,6 +88,7 @@ class DCDIOfficialSourceTests(unittest.TestCase):
             "lock-sha",
         )
         self.assertEqual(config["dependency_lock_sha256"], "lock-sha")
+        self.assertEqual(config["intervention_knowledge"], "unknown")
         self.assertEqual(config["official_runtime"]["python_version"], "3.9.0")
         self.assertEqual(
             config["official_runtime"]["resolved_environment"]["sha256"],
@@ -80,6 +98,88 @@ class DCDIOfficialSourceTests(unittest.TestCase):
             config["runtime_compatibility"]["version"],
             DCDI.DCDI_PLOT_COMPATIBILITY_VERSION,
         )
+
+    def test_known_target_configuration_and_output_are_mode_specific(self):
+        data = [np.ones((2, 2)), np.zeros((1, 2))]
+        targets = np.array([[1, 0]], dtype=int)
+        config = DCDI._configuration(
+            data,
+            0.1,
+            0.0,
+            True,
+            7,
+            False,
+            False,
+            8,
+            0.01,
+            100,
+            {},
+            None,
+            targets,
+        )
+        self.assertEqual(config["intervention_knowledge"], "known")
+        self.assertEqual(len(config["known_targets_sha256"]), 64)
+
+        with tempfile.TemporaryDirectory() as directory:
+            experiment = Path(directory) / "experiment"
+            train = experiment / "train"
+            train.mkdir(parents=True)
+            np.save(train / "DAG.npy", np.array([[0, 1], [0, 0]], dtype=int))
+            DCDI._write_known_targets(experiment, targets)
+            dag, observed = DCDI._read_outputs(experiment, 2, 1, targets)
+        np.testing.assert_array_equal(dag, [[0, 1], [0, 0]])
+        np.testing.assert_array_equal(observed, targets)
+
+    def test_optimization_calls_official_known_intervention_path(self):
+        data = [
+            np.array([[0.0, 1.0], [1.0, 0.0]]),
+            np.array([[2.0, 1.0], [3.0, 0.0]]),
+        ]
+        targets = np.array([[1, 0]], dtype=int)
+        captured = {}
+
+        def fake_command(_interpreter, _checkout, arguments):
+            captured["arguments"] = list(arguments)
+            return [sys.executable, "fake_dcdi.py", *arguments]
+
+        def fake_run(command, **_kwargs):
+            experiment = Path(command[command.index("--exp-path") + 1])
+            train = experiment / "train"
+            train.mkdir(parents=True, exist_ok=True)
+            np.save(train / "DAG.npy", np.array([[0, 1], [0, 0]], dtype=int))
+            return subprocess.CompletedProcess(command, 0)
+
+        with tempfile.TemporaryDirectory() as directory:
+            checkout = Path(directory)
+            with (
+                mock.patch.object(
+                    DCDI, "_validate_checkout", return_value=(checkout, False)
+                ),
+                mock.patch.object(DCDI, "_resolve_python", return_value=Path(sys.executable)),
+                mock.patch.object(
+                    DCDI,
+                    "_validate_official_runtime",
+                    return_value={"rscript": "/usr/bin/Rscript"},
+                ),
+                mock.patch.object(DCDI, "_official_command", side_effect=fake_command),
+                mock.patch.object(DCDI.subprocess, "run", side_effect=fake_run),
+            ):
+                dag, observed, _, metadata = DCDI.optimization(
+                    data,
+                    graph_penalty=0.1,
+                    target_penalty=0.0,
+                    known_targets=targets,
+                    normalize_data=False,
+                    timeout=10,
+                )
+
+        arguments = captured["arguments"]
+        knowledge_index = arguments.index("--intervention-knowledge")
+        self.assertEqual(arguments[knowledge_index + 1], "known")
+        self.assertNotIn("--coeff-interv-sparsity", arguments)
+        self.assertEqual(metadata["intervention_knowledge"], "known")
+        np.testing.assert_array_equal(dag, [[0, 1], [0, 0]])
+        np.testing.assert_array_equal(observed, targets)
 
     def test_plot_compatibility_is_staged_outside_author_checkout(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -146,6 +246,58 @@ class GIESOfficialSourceTests(unittest.TestCase):
         self.assertNotIn("def delete", source)
 
 
+class IGSPOfficialSourceTests(unittest.TestCase):
+    def test_adapter_supplies_exact_known_target_sets_to_causaldag(self):
+        data = [
+            np.array([[0.0, 1.0], [1.0, 0.0]]),
+            np.array([[2.0, 1.0], [3.0, 0.0]]),
+            np.array([[1.0, 2.0], [0.0, 3.0]]),
+        ]
+        targets = np.array([[1, 0], [0, 1]], dtype=int)
+        captured = {}
+
+        class FakeTester:
+            def __init__(self, test, suffstat, **kwargs):
+                self.test = test
+                self.suffstat = suffstat
+                self.kwargs = kwargs
+
+        class FakeDag:
+            def to_amat(self, node_list):
+                self.node_list = node_list
+                return np.array([[0, 1], [0, 0]], dtype=int), node_list
+
+        def fake_igsp(settings, nodes, ci_tester, invariance_tester, **kwargs):
+            captured.update(
+                settings=settings,
+                nodes=nodes,
+                ci_tester=ci_tester,
+                invariance_tester=invariance_tester,
+                kwargs=kwargs,
+            )
+            return FakeDag()
+
+        api = (
+            FakeTester,
+            FakeTester,
+            lambda obs, interventions: (obs, interventions),
+            object(),
+            fake_igsp,
+            lambda obs: obs,
+            object(),
+        )
+        with mock.patch.object(IGSP, "_load_causaldag_api", return_value=api):
+            dag = IGSP.fit(data, targets, alpha=1e-3, depth=4, nruns=2, seed=7)
+
+        self.assertEqual(
+            captured["settings"],
+            [{"interventions": {0}}, {"interventions": {1}}],
+        )
+        self.assertEqual(captured["nodes"], {0, 1})
+        self.assertEqual(captured["kwargs"], {"depth": 4, "nruns": 2})
+        np.testing.assert_array_equal(dag, [[0, 1], [0, 0]])
+
+
 class MainRunnerOfficialSourceTests(unittest.TestCase):
     def test_python_preflight_imports_official_competitor_apis(self):
         completed = subprocess.CompletedProcess([], 0, "", "")
@@ -158,6 +310,7 @@ class MainRunnerOfficialSourceTests(unittest.TestCase):
         probe = run.call_args.args[0][-1]
         compile(probe, "<official-api-preflight>", "exec")
         self.assertIn("unknown_target_igsp", probe)
+        self.assertIn("igsp", probe)
         self.assertIn("import ges, gnies", probe)
         self.assertIn("from gies.scores import GaussIntL0Pen", probe)
         self.assertEqual(
@@ -223,7 +376,7 @@ class MainRunnerOfficialSourceTests(unittest.TestCase):
 
     def test_dcdi_package_version_differences_are_not_rejected(self):
         args = SimpleNamespace(
-            methods=["dcdi_g_unknown"],
+            methods=["dcdi_g_unknown", "dcdi_g_oracle"],
             dcdi_root=Path("/official/dcdi"),
             rscript="Rscript",
         )
@@ -248,16 +401,45 @@ class MainRunnerOfficialSourceTests(unittest.TestCase):
         ):
             runtime = main_experiment._validate_competitor_runtime(args)
         self.assertEqual(runtime["dcdi_g_unknown"], reported)
+        self.assertEqual(runtime["dcdi_g_oracle"], reported)
 
-    def test_quest_preflight_checks_presence_not_versions(self):
-        script = (
+    def test_quest_has_one_consistent_ten_replicate_array_per_method(self):
+        job_dir = (
             Path(__file__).resolve().parents[1]
             / "experiments"
             / "quest_jobs"
-            / "main_experiment_array.sh"
-        ).read_text()
-        self.assertIn('required <- c("pcalg", "SID")', script)
-        self.assertNotIn("packageVersion", script)
+        )
+        expected = {
+            method: job_dir / f"main_experiment_{method}.sh"
+            for method in main_experiment.METHODS
+        }
+        self.assertFalse((job_dir / "main_experiment_array.sh").exists())
+        self.assertEqual(
+            set(job_dir.glob("main_experiment_*.sh")), set(expected.values())
+        )
+        expected_schedule = {
+            "ps_mip_unknown": ("normal", "24:00:00"),
+            "dcdi_g_unknown": ("normal", "36:00:00"),
+            "utigsp_unknown": ("short", "01:00:00"),
+            "gnies_unknown": ("normal", "12:00:00"),
+            "ps_mip_oracle": ("normal", "24:00:00"),
+            "dcdi_g_oracle": ("normal", "24:00:00"),
+            "igsp_oracle": ("normal", "12:00:00"),
+            "gies_oracle": ("normal", "12:00:00"),
+        }
+        for method, path in expected.items():
+            with self.subTest(method=method):
+                script = path.read_text()
+                partition, wall_time = expected_schedule[method]
+                self.assertIn("#SBATCH --cpus-per-task=8", script)
+                self.assertIn("#SBATCH --mem=16G", script)
+                self.assertIn(f"#SBATCH --partition={partition}", script)
+                self.assertIn(f"#SBATCH --time={wall_time}", script)
+                self.assertIn("#SBATCH --array=1-10%10", script)
+                self.assertNotIn("--threads", script)
+                self.assertIn("--time-limit 3600", script)
+                self.assertIn(f"--methods {method}", script)
+                self.assertIn(f"parts/{method}/replicate_", script)
 
     def test_gnies_uses_author_greedy_search(self):
         calls = {}
@@ -280,13 +462,14 @@ class MainRunnerOfficialSourceTests(unittest.TestCase):
             generator_numpy_version="2.0.2",
             time_limit=10,
             metric_time_limit=10,
-            threads=1,
             rscript="Rscript",
         )
         for method in (
             "dcdi_g_unknown",
             "utigsp_unknown",
             "gnies_unknown",
+            "dcdi_g_oracle",
+            "igsp_oracle",
             "gies_oracle",
         ):
             setting = main_experiment._method_settings(method, data)[0]

@@ -11,8 +11,10 @@ from unittest import mock
 import numpy as np
 
 import DCDI
+import IGSP
 from experiments import run_main_experiment
 from experiments import test_main_experiment_setup
+from analysis import plot_main_experiment_results
 from src.main_experiment_cli import main_screen_alpha
 from src.main_experiment_data import (
     DEFAULT_DATA_ROOT,
@@ -51,11 +53,24 @@ class PersistedStandaloneDataTests(unittest.TestCase):
 
     def test_active_method_entrypoints_do_not_reference_legacy_data(self):
         root = Path(__file__).resolve().parents[1]
-        for name in ("MIP.py", "MIP_profiled.py", "DCDI.py", "UTIGSP.py", "GIES.py"):
+        for name in (
+            "MIP.py", "MIP_profiled.py", "DCDI.py", "UTIGSP.py", "IGSP.py",
+            "GIES.py",
+        ):
             source = (root / name).read_text()
             self.assertNotIn("SyntheticData", source, name)
             self.assertNotIn("legacy_pipeline", source, name)
             self.assertIn("load_cli_instance", source, name)
+
+    def test_zero_argument_plot_entrypoint_uses_automatic_defaults(self):
+        with (
+            mock.patch.object(plot_main_experiment_results, "aggregate") as aggregate,
+            mock.patch("sys.stdout", new_callable=io.StringIO) as output,
+        ):
+            code = plot_main_experiment_results.main()
+        self.assertEqual(code, 0)
+        aggregate.assert_called_once_with()
+        self.assertIn("main_tdp_fdp.png", output.getvalue())
 
 
 class NoSaveSetupCheckTests(unittest.TestCase):
@@ -64,7 +79,6 @@ class NoSaveSetupCheckTests(unittest.TestCase):
         return argparse.Namespace(
             data_root=root,
             seed=DEFAULT_MASTER_SEED,
-            threads=1,
             time_limit=10.0,
             metric_time_limit=10.0,
             dcdi_root=root / "external" / "dcdi",
@@ -309,6 +323,63 @@ class NoSaveSetupCheckTests(unittest.TestCase):
 
         self.assertIsNone(optimization.call_args.kwargs["artifact_dir"])
         self.assertIsNone(result["artifact_dir"])
+
+    def test_dcdi_oracle_passes_targets_to_official_known_mode(self):
+        args = SimpleNamespace(
+            official_runtime={"dcdi_g_oracle": {}},
+            dcdi_root=Path("/official/dcdi"),
+            time_limit=10,
+            rscript="Rscript",
+            transient_artifacts=True,
+        )
+        setting = {"graph_penalty": 0.1, "target_penalty": 0.0}
+        data = [np.ones((3, 2)), np.ones((2, 2))]
+        targets = np.array([[1, 0]], dtype=int)
+        with (
+            mock.patch.object(
+                DCDI,
+                "optimization",
+                return_value=(
+                    np.zeros((2, 2), dtype=int),
+                    targets,
+                    0.5,
+                    {"artifact_dir": None, "cached": False},
+                ),
+            ) as optimization,
+            mock.patch(
+                "src.utils.interventional_cpdag",
+                return_value=np.zeros((2, 2), dtype=int),
+            ),
+        ):
+            result = run_main_experiment._run_dcdi(
+                data, args, setting, 2, 1, 1, 7, known_targets=targets
+            )
+
+        np.testing.assert_array_equal(
+            optimization.call_args.kwargs["known_targets"], targets
+        )
+        self.assertIsNone(result["estimated_targets"])
+
+    def test_igsp_oracle_passes_targets_without_reporting_target_recovery(self):
+        data = [np.ones((3, 2)), np.ones((2, 2))]
+        targets = np.array([[1, 0]], dtype=int)
+        args = SimpleNamespace(time_limit=10)
+        setting = {"alpha": 1e-5}
+        with (
+            mock.patch.object(
+                IGSP, "fit", return_value=np.zeros((2, 2), dtype=int)
+            ) as fit,
+            mock.patch(
+                "src.utils.interventional_cpdag",
+                return_value=np.zeros((2, 2), dtype=int),
+            ),
+        ):
+            result = run_main_experiment._run_igsp(
+                data, targets, args, setting, seed=7
+            )
+
+        np.testing.assert_array_equal(fit.call_args.args[1], targets)
+        self.assertNotIn("estimated_targets", result)
 
 
 if __name__ == "__main__":

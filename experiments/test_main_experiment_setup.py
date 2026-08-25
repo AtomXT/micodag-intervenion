@@ -41,9 +41,10 @@ from src.utils import interventional_cpdag
 TEST_P = 10
 TEST_EDGE_MULTIPLIER = 1
 TEST_REPLICATE = 1
+DCDI_METHODS = ("dcdi_g_unknown", "dcdi_g_oracle")
 SETUP_METHOD_ORDER = tuple(
-    method for method in main_experiment.METHODS if method != "dcdi_g_unknown"
-) + ("dcdi_g_unknown",)
+    method for method in main_experiment.METHODS if method not in DCDI_METHODS
+) + DCDI_METHODS
 
 
 @contextmanager
@@ -52,7 +53,7 @@ def _fit_progress(method: str, time_limit: float):
     source = main_experiment.OFFICIAL_IMPLEMENTATIONS.get(method)
     label = "project PS-MIP" if source is None else source["name"]
     detail = ""
-    if method == "dcdi_g_unknown":
+    if method in DCDI_METHODS:
         detail = (
             f"; this neural fit can run until the {time_limit:g}-second limit"
         )
@@ -70,7 +71,7 @@ def _fit_progress(method: str, time_limit: float):
             )
 
     worker = None
-    if method == "dcdi_g_unknown":
+    if method in DCDI_METHODS:
         worker = threading.Thread(target=heartbeat, daemon=True)
         worker.start()
     try:
@@ -100,7 +101,6 @@ def _parser() -> argparse.ArgumentParser:
         default=DEFAULT_MASTER_SEED,
         help=f"dataset-suite master seed (default: {DEFAULT_MASTER_SEED})",
     )
-    parser.add_argument("--threads", type=int, default=1)
     parser.add_argument(
         "--time-limit",
         type=float,
@@ -133,7 +133,6 @@ def _arguments(namespace: argparse.Namespace, manifest: dict) -> SimpleNamespace
         methods=list(main_experiment.METHODS),
         data_root=namespace.data_root.expanduser().resolve(),
         seed=namespace.seed,
-        threads=namespace.threads,
         time_limit=namespace.time_limit,
         metric_time_limit=namespace.metric_time_limit,
         dcdi_root=namespace.dcdi_root.expanduser().resolve(),
@@ -213,7 +212,7 @@ def _print_method_result(method: str, row: dict, result: dict) -> None:
 
 
 def run_check(namespace: argparse.Namespace) -> int:
-    """Return 0 only when all six fit and metric paths complete successfully."""
+    """Return 0 only when all eight fit and metric paths complete successfully."""
     data_root = namespace.data_root.expanduser().resolve()
     manifest = load_main_experiment_manifest(
         data_root, master_seed=namespace.seed
@@ -331,8 +330,6 @@ def run_check(namespace: argparse.Namespace) -> int:
 def main() -> int:
     parser = _parser()
     args = parser.parse_args()
-    if args.threads < 1:
-        parser.error("threads must be positive")
     if (
         not np.isfinite([args.time_limit, args.metric_time_limit]).all()
         or args.time_limit <= 0
