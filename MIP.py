@@ -198,7 +198,7 @@ def main() -> int:
         help="graph penalty; omit for the primary log(N)/N setting",
     )
     parser.add_argument("--lambda-delta", type=float)
-    parser.add_argument("--screen-constant", type=float, default=5.0)
+    parser.add_argument("--screen-constant", type=float, default=1.0)
     parser.add_argument("--threads", type=int, default=1)
     parser.add_argument("--time-limit", type=float, default=3600)
     parser.add_argument("--metric-time-limit", type=float, default=3600)

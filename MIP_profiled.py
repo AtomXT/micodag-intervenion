@@ -234,9 +234,9 @@ def main() -> int:
         type=float,
         help="common target penalty; omit to use the primary graph penalty",
     )
-    parser.add_argument("--screen-constant", type=float, default=5.0)
+    parser.add_argument("--screen-constant", type=float, default=1.0)
     parser.add_argument("--max-parents", type=int)
-    parser.add_argument("--configuration-limit", type=int, default=1_100_000)
+    parser.add_argument("--configuration-limit", type=int, default=4_000_000)
     parser.add_argument(
         "--known-targets",
         action="store_true",

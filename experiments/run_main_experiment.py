@@ -48,7 +48,7 @@ from src.main_experiment_data import (
 )
 
 
-MAIN_EXPERIMENT_VERSION = 9
+MAIN_EXPERIMENT_VERSION = 10
 COMPLETED_STATUSES = {"ok", "ok_nonoptimal"}
 FAILURE_STATUSES = {"fit_error", "metric_error"}
 
@@ -94,9 +94,9 @@ UTIGSP_ALPHAS = (1e-5, 1e-4, 1e-3, 1e-2, 5e-2)
 
 # PS-MIP screens only the observational sample. Its scale follows the requested
 # high-dimensional order rather than a fixed graphical-lasso regularizer.
-SCREEN_CONSTANT = 5.0
+SCREEN_CONSTANT = 1.0
 MAX_PARENTS = None
-CONFIGURATION_LIMIT = 1_100_000
+CONFIGURATION_LIMIT = 4_000_000
 UTIGSP_DEPTH = 4
 UTIGSP_NRUNS = 10
 DCDI_HIDDEN_DIM = 8

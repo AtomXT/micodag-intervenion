@@ -29,9 +29,10 @@ computed as
 w_e = n_e / sum_e(n_e).
 ```
 
-The standalone MIP commands and the main experiment use the same persisted
-datasets and the same graphical-lasso screening rule,
-`5*sqrt(log(p)/n_screen)`. Imported optimization functions can still accept a
+The standalone MIP commands and both PS-MIP variants in the main experiment use
+the same persisted datasets and the same graphical-lasso screening rule,
+`sqrt(log(p)/n_screen)`. The competing methods do not use this PS-MIP
+screen. Imported optimization functions can still accept a
 supplied superstructure or use the complete graph.
 
 The formulation requires bounded `Gamma` entries. In particular, `MIP.py`
@@ -170,7 +171,7 @@ translate input or output formats. PS-MIP is the proposed method in this project
 implementation is intentionally outside this competitor-source rule. Every
 result's `method_config` records the official source URL, installed package
 versions, and the R/Python executables used. Missing packages or unusable APIs
-stop before fitting, but version differences do not. Main experiment version 9
+stop before fitting, but version differences do not. Main experiment version 10
 prevents older adapter results from being silently reused.
 
 ## Main synthetic experiment
@@ -272,15 +273,17 @@ experiment configurations passed to the authors' CLI; they are not presented
 as the authors' full tuning protocol.
 
 PS-MIP screens the observational sample with
-`alpha_screen = 5*sqrt(log(p)/n_screen)`, where `n_screen` is exactly the number
+`alpha_screen = sqrt(log(p)/n_screen)`, where `n_screen` is exactly the number
 of observational rows used by graphical lasso. Parent sets are unrestricted
 within that screened superstructure. The screen can omit true adjacencies, so
 PS-MIP remains exact only conditional on the screen; `screen_alpha` and
 `n_screen` are recorded with every setting, and successful PS-MIP rows also
 record the realized `screen_edges` and `screen_parent_sets`. The active grid
-uses the sparse and moderately dense edge multipliers `e=1` and `e=2`; its
-screen diagnostics are reported with the results rather than relying on the
-obsolete denser-grid preflight values.
+uses the sparse and moderately dense edge multipliers `e=1` and `e=2`. Across
+the 60 committed instances, the largest screen has 3,064,768 parent sets, so
+the safety guard is 4 million. Screen diagnostics are reported with the
+results. The largest PS-MIP cells may spend substantial time profiling local
+scores before Gurobi starts.
 
 Before launching experiments, run the repository setup check. It loads the
 smallest official instance (`p=10`, `e=1`, replicate 1), checks the required
@@ -444,7 +447,7 @@ python3 MIP.py --p 20 --e 1 --replicate 1 --time-limit 1000
 
 When penalties are omitted, the standalone MIP uses the primary
 `log(N)/N` graph and target penalties. Its default screen is the main
-experiment rule `5*sqrt(log(p)/n_screen)`; change only the constant with
+experiment rule `sqrt(log(p)/n_screen)`; change only the constant with
 `--screen-constant`. Direct method commands default to the main experiment's
 one-hour solver/external-fit and metric limits; PS-MIP also defaults to one
 solver thread. As in the main runner, PS-MIP's screening and local-score

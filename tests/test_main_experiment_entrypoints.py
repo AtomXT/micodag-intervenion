@@ -30,6 +30,8 @@ class PersistedStandaloneDataTests(unittest.TestCase):
     def test_main_experiment_uses_revised_grid(self):
         self.assertEqual(P_VALUES, (10, 20, 30))
         self.assertEqual(EDGE_MULTIPLIERS, (1, 2))
+        self.assertEqual(run_main_experiment.SCREEN_CONSTANT, 1.0)
+        self.assertEqual(run_main_experiment.CONFIGURATION_LIMIT, 4_000_000)
 
     def test_generated_smallest_main_instance_loads_with_exact_design(self):
         manifest = load_main_experiment_manifest(
@@ -48,11 +50,11 @@ class PersistedStandaloneDataTests(unittest.TestCase):
         self.assertEqual(targets.shape, (5, 10))
         self.assertEqual(len(info["data_sha256"]), 64)
 
-    def test_screening_rule_is_five_times_requested_order(self):
+    def test_screening_rule_uses_requested_order(self):
         data = [np.ones((1000, 10))]
         self.assertAlmostEqual(
             main_screen_alpha(data),
-            5.0 * np.sqrt(np.log(10) / 1000),
+            np.sqrt(np.log(10) / 1000),
         )
         with self.assertRaisesRegex(ValueError, "finite"):
             main_screen_alpha(data, float("nan"))

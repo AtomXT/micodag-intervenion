@@ -71,7 +71,7 @@ def selected_method_seed(args, instance_info) -> int:
     return int(instance_info["seed"] if override is None else override)
 
 
-def main_screen_alpha(data, constant: float = 5.0) -> float:
+def main_screen_alpha(data, constant: float = 1.0) -> float:
     """Return c*sqrt(log(p)/n_obs), the main PS-MIP screening scale."""
     if not isfinite(constant) or constant <= 0:
         raise ValueError("screen constant must be positive and finite")
