@@ -16,6 +16,8 @@ module purge all
 module load python-miniconda3
 source activate python39
 module load gurobi
+module load R/4.4.0
+
 
 export OMP_NUM_THREADS=8
 export OPENBLAS_NUM_THREADS=8
