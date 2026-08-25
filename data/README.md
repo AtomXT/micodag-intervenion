@@ -10,7 +10,8 @@ Generate the complete main-experiment suite with:
 python3 experiments/generate_main_experiment_data.py
 ```
 
-That dedicated script writes and validates 60 immutable archives plus
+That dedicated script writes and validates 60 immutable archives for
+`p={10,20,30}`, `e={1,2}`, and 10 replicates, plus
 `data/main_experiment/manifest.json`. Model-fitting jobs only load those files;
 they never generate data implicitly. Generation is not restricted to one NumPy
 release; the actual version is recorded in the manifest. The generated suite

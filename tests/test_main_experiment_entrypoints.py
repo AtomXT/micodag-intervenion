@@ -19,12 +19,18 @@ from src.main_experiment_cli import main_screen_alpha
 from src.main_experiment_data import (
     DEFAULT_DATA_ROOT,
     DEFAULT_MASTER_SEED,
+    EDGE_MULTIPLIERS,
+    P_VALUES,
     load_main_experiment_instance,
     load_main_experiment_manifest,
 )
 
 
 class PersistedStandaloneDataTests(unittest.TestCase):
+    def test_main_experiment_uses_revised_grid(self):
+        self.assertEqual(P_VALUES, (10, 20, 30))
+        self.assertEqual(EDGE_MULTIPLIERS, (1, 2))
+
     def test_generated_smallest_main_instance_loads_with_exact_design(self):
         manifest = load_main_experiment_manifest(
             DEFAULT_DATA_ROOT, master_seed=DEFAULT_MASTER_SEED

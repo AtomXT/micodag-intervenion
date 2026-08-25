@@ -48,7 +48,7 @@ from src.main_experiment_data import (
 )
 
 
-MAIN_EXPERIMENT_VERSION = 8
+MAIN_EXPERIMENT_VERSION = 9
 COMPLETED_STATUSES = {"ok", "ok_nonoptimal"}
 FAILURE_STATUSES = {"fit_error", "metric_error"}
 

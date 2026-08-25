@@ -170,7 +170,7 @@ translate input or output formats. PS-MIP is the proposed method in this project
 implementation is intentionally outside this competitor-source rule. Every
 result's `method_config` records the official source URL, installed package
 versions, and the R/Python executables used. Missing packages or unusable APIs
-stop before fitting, but version differences do not. Main experiment version 8
+stop before fitting, but version differences do not. Main experiment version 9
 prevents older adapter results from being silently reused.
 
 ## Main synthetic experiment
@@ -180,8 +180,8 @@ materializes one graph and one shared set of datasets for every replicate in
 the grid
 
 ```text
-p = 10, 20, 50
-e = 1, 4
+p = 10, 20, 30
+e = 1, 2
 10 replicates
 ```
 
@@ -277,13 +277,10 @@ of observational rows used by graphical lasso. Parent sets are unrestricted
 within that screened superstructure. The screen can omit true adjacencies, so
 PS-MIP remains exact only conditional on the screen; `screen_alpha` and
 `n_screen` are recorded with every setting, and successful PS-MIP rows also
-record the realized `screen_edges` and `screen_parent_sets`. Across the 60
-default seeded instances, the largest preflight screen contains 674,275 parent
-sets, below the 1.1-million safety guard.
-In the seeded `p=10,e=4` preflight cell, the screen had 27 edges and 528 parent
-sets: 25 true adjacencies, two false adjacencies, and 13 of the 38 true
-adjacencies omitted. This is why the screen statistics remain part of the
-reported PS-MIP result rather than an invisible preprocessing detail.
+record the realized `screen_edges` and `screen_parent_sets`. The active grid
+uses the sparse and moderately dense edge multipliers `e=1` and `e=2`; its
+screen diagnostics are reported with the results rather than relying on the
+obsolete denser-grid preflight values.
 
 Before launching experiments, run the repository setup check. It loads the
 smallest official instance (`p=10`, `e=1`, replicate 1), checks the required
@@ -366,13 +363,12 @@ memory; only its wall time and Quest partition depend on the method. The
 method-specific requests above are deliberately larger than the observed smoke
 times but smaller than the former blanket 48-hour request. In representative
 replicate-1 checks, all 30 UT-IGSP fits used 6.64 seconds of fitting time in
-total. Dense `p=50, e=4` primary fits for GnIES, IGSP, and GIES each exceeded a
-five-minute probe, while their smaller cells completed. PS-MIP oracle used
-332.5 seconds on that dense cell with a five-minute Gurobi limit; unknown-target
-PS-MIP also spent more than five minutes in pre-solver scoring. Both DCDI modes
-exceeded five minutes even on `p=10, e=1`. These checks are estimates rather
-than guarantees, so the checkpoint files remain the recovery mechanism if a
-replicate is slower on Quest.
+total. Both DCDI modes exceeded five minutes even on `p=10, e=1`. The revised
+`p={10,20,30}`, `e={1,2}` grid removes the obsolete densest-cell timing probes;
+the existing requests remain conservative until timings from the revised grid
+are available. These checks are estimates rather than guarantees, so the
+checkpoint files remain the recovery mechanism if a replicate is slower on
+Quest.
 
 After cloning or pulling the repository on Quest, submit from the repository
 root. The committed `data/main_experiment/manifest.json` must already exist:
