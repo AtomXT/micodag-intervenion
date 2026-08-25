@@ -440,6 +440,10 @@ class MainRunnerOfficialSourceTests(unittest.TestCase):
                 self.assertIn("--time-limit 3600", script)
                 self.assertIn(f"--methods {method}", script)
                 self.assertIn(f"parts/{method}/replicate_", script)
+                if method.startswith("dcdi_g_"):
+                    self.assertIn("module load R/4.4.0", script)
+                else:
+                    self.assertNotIn("module load R/4.4.0", script)
 
     def test_gnies_uses_author_greedy_search(self):
         calls = {}

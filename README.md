@@ -94,9 +94,16 @@ A working Gurobi license is still required. Install the R packages used only
 by the unmodified DCDI reporting step:
 
 ```bash
+# Quest only: make Rscript available first.
+module load R/4.4.0
 Rscript --vanilla -e 'if (!requireNamespace("BiocManager", quietly=TRUE)) install.packages("BiocManager", repos="https://cloud.r-project.org"); BiocManager::install("pcalg", ask=FALSE, update=FALSE)'
 Rscript --vanilla -e 'install.packages("SID", repos="https://cloud.r-project.org")'
 ```
+
+Quest stores user-installed R packages separately for each R major/minor
+version. The two DCDI submission scripts therefore load `R/4.4.0` explicitly;
+install `pcalg` and `SID` once while that same module is loaded. The other six
+method arrays do not load or use R.
 
 The `pgmpy` pin is required when using Python 3.9 because current `pgmpy`
 releases require Python 3.10 or newer.
