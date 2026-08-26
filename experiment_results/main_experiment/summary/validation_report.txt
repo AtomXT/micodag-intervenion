@@ -1,0 +1,23 @@
+input files: 80
+expected rows: 2040
+observed version-10 rows: 1988
+expected-key rows: 1988
+successful metric rows: 1426
+missing rows: 52
+unexpected rows: 0
+unsuccessful rows: 562
+incomplete method/replicate grids: 157
+
+status counts:
+method          status       
+dcdi_g_oracle   fit_error        180
+dcdi_g_unknown  fit_error        300
+gies_oracle     ok               300
+gnies_unknown   fit_error         82
+                ok               178
+igsp_oracle     ok               300
+ps_mip_oracle   ok               144
+                ok_nonoptimal     28
+ps_mip_unknown  ok               126
+                ok_nonoptimal     50
+utigsp_unknown  ok               300
