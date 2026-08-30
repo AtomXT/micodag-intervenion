@@ -1,0 +1,8 @@
+{
+  "format_version": 1,
+  "source_url": "https://github.com/haeggee/bacadi.git",
+  "source_commit": "b2c27d5fc560f7e0ec2aa282cd2e0a0e6e8637ea",
+  "python_file_count": 31,
+  "python_tree_sha256": "6d54e25cf1667375011b02c0d345278154a6d81eb312a74c20287a4dbf409855",
+  "selection": "The complete upstream bacadi Python package and MIT license; paper-only result, plotting, baseline, and simulator directories are omitted."
+}

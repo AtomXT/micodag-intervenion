@@ -1,0 +1,12 @@
+# BaCaDI runs in a dedicated Quest environment but still needs the shared
+# experiment and metric dependencies.
+-r requirements-dcdi.txt
+
+# The authors released BaCaDI against JAX 0.2.13/jaxlib 0.1.69. Those old
+# jaxlib wheels are no longer distributed for the supported Quest runtime.
+# BaCaDI.py supplies narrowly scoped API aliases for this tested JAX release
+# while keeping the vendored author source byte-for-byte unchanged.
+jax==0.4.30
+jaxlib==0.4.30
+python-igraph==0.11.8
+tqdm==4.67.1

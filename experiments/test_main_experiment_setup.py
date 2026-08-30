@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run every main-experiment method once without saving experiment results."""
+"""Run the practical local setup check without saving experiment results."""
 
 from __future__ import annotations
 
@@ -43,7 +43,9 @@ TEST_EDGE_MULTIPLIER = 1
 TEST_REPLICATE = 1
 DCDI_METHODS = ("dcdi_g_unknown", "dcdi_g_oracle")
 SETUP_METHOD_ORDER = tuple(
-    method for method in main_experiment.METHODS if method not in DCDI_METHODS
+    method
+    for method in main_experiment.METHODS
+    if method not in DCDI_METHODS and method != "bacadi_unknown"
 ) + DCDI_METHODS
 
 
@@ -53,9 +55,9 @@ def _fit_progress(method: str, time_limit: float):
     source = main_experiment.OFFICIAL_IMPLEMENTATIONS.get(method)
     label = "project PS-MIP" if source is None else source["name"]
     detail = ""
-    if method in DCDI_METHODS:
+    if method in DCDI_METHODS or method == "bacadi_unknown":
         detail = (
-            f"; this neural fit can run until the {time_limit:g}-second limit"
+            f"; this slow fit can run until the {time_limit:g}-second limit"
         )
     print(f"\n[{method}] running {label}{detail}...", flush=True)
 
@@ -71,7 +73,7 @@ def _fit_progress(method: str, time_limit: float):
             )
 
     worker = None
-    if method in DCDI_METHODS:
+    if method in DCDI_METHODS or method == "bacadi_unknown":
         worker = threading.Thread(target=heartbeat, daemon=True)
         worker.start()
     try:
@@ -85,8 +87,8 @@ def _fit_progress(method: str, time_limit: float):
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Check the complete main-experiment setup by running every method "
-            "once on p=10, e=1, replicate=1. Results are printed and never saved."
+            "Check the local main-experiment setup on p=10, e=1, replicate=1. "
+            "The hours-long BaCaDI fit is opt-in; results are printed and never saved."
         )
     )
     parser.add_argument(
@@ -120,6 +122,21 @@ def _parser() -> argparse.ArgumentParser:
         help="hash-verified vendored snapshot of the official DCDI repository",
     )
     parser.add_argument(
+        "--bacadi-root",
+        type=Path,
+        default=PROJECT_ROOT / "external" / "bacadi",
+        help="hash-verified vendored snapshot of the official BaCaDI package",
+    )
+    parser.add_argument(
+        "--include-bacadi",
+        action="store_true",
+        help=(
+            "also run the official-repository-default BaCaDI configuration; this is "
+            "disabled by "
+            "default because one fit can take hours"
+        ),
+    )
+    parser.add_argument(
         "--rscript",
         default="Rscript",
         help="Rscript executable providing pcalg and SID for DCDI reporting",
@@ -127,15 +144,18 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _arguments(namespace: argparse.Namespace, manifest: dict) -> SimpleNamespace:
+def _arguments(
+    namespace: argparse.Namespace, manifest: dict, methods
+) -> SimpleNamespace:
     """Build the runner contract while deliberately omitting any output path."""
     return SimpleNamespace(
-        methods=list(main_experiment.METHODS),
+        methods=list(methods),
         data_root=namespace.data_root.expanduser().resolve(),
         seed=namespace.seed,
         time_limit=namespace.time_limit,
         metric_time_limit=namespace.metric_time_limit,
         dcdi_root=namespace.dcdi_root.expanduser().resolve(),
+        bacadi_root=namespace.bacadi_root.expanduser().resolve(),
         rscript=namespace.rscript,
         generator_numpy_version=manifest["provenance"]["numpy_version"],
         official_runtime={},
@@ -212,12 +232,15 @@ def _print_method_result(method: str, row: dict, result: dict) -> None:
 
 
 def run_check(namespace: argparse.Namespace) -> int:
-    """Return 0 only when all eight fit and metric paths complete successfully."""
+    """Return 0 only when every selected fit and metric path succeeds."""
     data_root = namespace.data_root.expanduser().resolve()
     manifest = load_main_experiment_manifest(
         data_root, master_seed=namespace.seed
     )
-    args = _arguments(namespace, manifest)
+    method_order = list(SETUP_METHOD_ORDER)
+    if getattr(namespace, "include_bacadi", False):
+        method_order.insert(-len(DCDI_METHODS), "bacadi_unknown")
+    args = _arguments(namespace, manifest, method_order)
 
     print(
         "Checking required packages, APIs, and official implementation sources...",
@@ -250,7 +273,7 @@ def run_check(namespace: argparse.Namespace) -> int:
     print("True environment targets:\n", true_targets)
 
     failures = []
-    for method in SETUP_METHOD_ORDER:
+    for method in method_order:
         setting = _primary_setting(method, data)
         row = main_experiment._base_row(
             TEST_P,
@@ -319,7 +342,7 @@ def run_check(namespace: argparse.Namespace) -> int:
         _print_method_result(method, row, result)
 
     print("\nSummary:")
-    print(f"  methods passed: {len(SETUP_METHOD_ORDER) - len(failures)}")
+    print(f"  methods passed: {len(method_order) - len(failures)}")
     print(f"  methods failed: {len(failures)}")
     print("  saved outputs: none")
     for method, error in failures:

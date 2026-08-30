@@ -48,16 +48,19 @@ second-moment matrices and the chosen coefficient bounds.
 | `MIP.py` | Current Equation (4.4) implementation and command-line runner |
 | `MIP_profiled.py` | Fully profiled parent-set and intervention-pattern MILP |
 | `DCDI.py` | Adapter for the official DCDI-G perfect known/unknown-target implementations |
+| `BaCaDI.py` | Adapter for the official joint linear-Gaussian BaCaDI unknown-target implementation |
 | `GIES.py` | Thin adapter for the requested `juangamella/gies` Python package |
 | `UTIGSP.py` | Adapter for UT-IGSP from `causaldag` |
 | `IGSP.py` | Adapter for known-target IGSP from `causaldag` |
+| `external/bacadi/` | Hash-verified minimal snapshot of the official BaCaDI Python package |
+| `requirements-bacadi.txt` | Dedicated Quest environment for BaCaDI and the shared experiment code |
 | `data/DataGeneration.py` | Python translation of the original R synthetic-data generator |
 | `experiments/generate_main_experiment_data.py` | Standalone generator for all persisted main-experiment datasets |
-| `experiments/test_main_experiment_setup.py` | No-save, one-instance check of every main-experiment method |
+| `experiments/test_main_experiment_setup.py` | No-save, one-instance check of the eight shared-environment methods, with optional BaCaDI inclusion |
 | `experiments/run_main_experiment.py` | Main shared-data synthetic experiment driver |
 | `analysis/plot_main_experiment_results.py` | Zero-argument plot of all currently available main-experiment results |
-| `analysis/aggregate_main_experiment.py` | Main TDP-FDP paths and best-`d_cpdag` potential tables |
-| `experiments/quest_jobs/main_experiment_<method>.sh` | Eight method-specific ten-replicate Slurm arrays |
+| `analysis/aggregate_main_experiment.py` | Main graph and target recovery paths and best-`d_cpdag` potential tables |
+| `experiments/quest_jobs/main_experiment_<method>.sh` | Nine method-specific Slurm arrays, including the cell-wise BaCaDI array |
 | `src/main_experiment_data.py` | Main data schema, seed, serialization, and validation library |
 | `src/main_experiment_cli.py` | Shared persisted-data options for standalone method commands |
 | `src/utils.py` | Graph-evaluation utilities |
@@ -79,8 +82,8 @@ The current MIP requires:
 - Gurobi and `gurobipy`; and
 - a working Gurobi license.
 
-Install the tested dependencies into the Python environment that will run the
-experiment (the same active environment is used for every method):
+Install the tested shared dependencies into the Python environment used for
+the eight non-BaCaDI methods:
 
 ```bash
 python3.9 -m pip install -r requirements-dcdi.txt
@@ -103,8 +106,8 @@ Rscript --vanilla -e 'install.packages("SID", repos="https://cloud.r-project.org
 
 Quest stores user-installed R packages separately for each R major/minor
 version. The two DCDI submission scripts therefore load `R/4.4.0` explicitly;
-install `pcalg` and `SID` once while that same module is loaded. The other six
-method arrays do not load or use R.
+install `pcalg` and `SID` once while that same module is loaded. The seven
+non-DCDI method arrays do not load or use R.
 
 The `pgmpy` pin is required when using Python 3.9 because current `pgmpy`
 releases require Python 3.10 or newer.
@@ -154,6 +157,37 @@ the same samples plus the true intervention masks, as required by the authors'
 `intervention-knowledge=known` path, while the DAG remains hidden. The adapter
 validates the author-produced graph and, for unknown mode, learned targets.
 
+### BaCaDI installation
+
+`BaCaDI.py` uses the official BaCaDI source pinned at commit
+`b2c27d5fc560f7e0ec2aa282cd2e0a0e6e8637ea`. The complete upstream `bacadi`
+Python package and its MIT license are committed under `external/bacadi`;
+paper results, plotting code, baselines, and simulators are omitted. The
+adapter validates the source commit and hashes the complete vendored Python
+tree before every fit. Runtime compatibility aliases are installed in memory
+for APIs removed after the authors' JAX release; the vendored source files are
+not changed.
+
+BaCaDI runs in a dedicated Quest environment because its tested modern JAX
+runtime should not be mixed into the shared environment. Create that
+environment once from the repository root:
+
+```bash
+module purge all
+module load python-miniconda3
+conda create --name bacadi39 python=3.9 -y
+source activate bacadi39
+python3 -m pip install -r requirements-bacadi.txt
+python3 -c 'from BaCaDI import validate_runtime; print(validate_runtime())'
+```
+
+`requirements-bacadi.txt` includes the shared experiment dependencies and pins
+JAX, `jaxlib`, `python-igraph`, and `tqdm` for the adapter. The provenance
+manifest `external/bacadi/VENDORED_SOURCE.json` records the official URL,
+commit, selected source tree, and its SHA-256 digest. The adapter records the
+actual interpreter, JAX backend, installed versions, and compatibility layer in
+each result's `method_config`.
+
 ### Official competing implementations
 
 The competing algorithms are not implemented in this repository:
@@ -162,12 +196,16 @@ The competing algorithms are not implemented in this repository:
 | --- | --- |
 | DCDI-G | Hash-verified minimal snapshot of the authors' [`slachapelle/dcdi`](https://github.com/slachapelle/dcdi) source at commit `594d328eae7795785e0d1a1138945e28a4fec037`, executed through its official `main.py` |
 | UT-IGSP | [`causaldag`](https://github.com/uhlerlab/causaldag) / `graphical-model-learning` author package API (tested with 0.1a163 / 0.1a8) |
+| BaCaDI | Hash-verified minimal snapshot of the authors' [`haeggee/bacadi`](https://github.com/haeggee/bacadi) source at commit `b2c27d5fc560f7e0ec2aa282cd2e0a0e6e8637ea`, using `bacadi.inference.bacadi_joint.BaCaDIJoint` |
 | IGSP oracle | The known-target `igsp` API from the same `causaldag` / `graphical-model-learning` author packages |
 | GnIES | [First-author `gnies`](https://github.com/juangamella/gnies) package using its full `approach="greedy"` search (tested with 0.3.3) |
 | GIES oracle | Olga Kolotuhina and Juan L. Gamella's requested [`juangamella/gies`](https://github.com/juangamella/gies) Python package (tested with 0.0.3) |
 
-`DCDI.py`, `UTIGSP.py`, `IGSP.py`, and `GIES.py` only validate data and
-translate input or output formats. PS-MIP is the proposed method in this project, so its local
+`DCDI.py`, `BaCaDI.py`, `UTIGSP.py`, `IGSP.py`, and `GIES.py` validate data and
+translate input or output formats. `BaCaDI.py` additionally applies
+observational-only standardization and selects the highest-weight acyclic joint
+particle to obtain one coherent graph-and-target point estimate for the shared
+metrics. PS-MIP is the proposed method in this project, so its local
 implementation is intentionally outside this competitor-source rule. Every
 result's `method_config` records the official source URL, installed package
 versions, and the R/Python executables used. Missing packages or unusable APIs
@@ -222,13 +260,13 @@ data-generation fallback. Every result records both the sample digest and an
 instance digest covering samples, DAG, intervention targets, and identifying
 metadata.
 
-Unknown-target methods are PS-MIP, DCDI-G, UT-IGSP, and GnIES. GnIES uses the
-authors' greedy search, not its faster rank approximation. `ps_mip_oracle`,
+Unknown-target methods are PS-MIP, DCDI-G, UT-IGSP, BaCaDI, and GnIES. GnIES
+uses the authors' greedy search, not its faster rank approximation. BaCaDI
+receives only the stacked samples and environment labels. `ps_mip_oracle`,
 `dcdi_g_oracle`, `igsp_oracle`, and `gies_oracle` each receive the generated
 target matrix. DCDI and IGSP oracle use their authors' official
-known-intervention pathways. These four
-oracle rows are graph-recovery references; their target-recovery fields are
-left empty.
+known-intervention pathways. These four oracle rows are graph-recovery
+references; their target-recovery fields are left empty.
 
 The main comparison records compact, predeclared tuning paths:
 
@@ -239,11 +277,37 @@ The main comparison records compact, predeclared tuning paths:
 - GnIES and GIES: `{0.25, 0.5, 1, 2, 4}` times their native
   `0.5*log(N)` BIC penalty;
 - UT-IGSP and IGSP oracle: tied `alpha=alpha_inv` over
-  `{1e-5, 1e-4, 1e-3, 1e-2, 0.05}`; and
+  `{1e-5, 1e-4, 1e-3, 1e-2, 0.05}`;
+- BaCaDI: one fixed `official_repo_default_joint` setting using the joint
+  linear-Gaussian model, 20 particles, 3000 SVGD steps, 128 gradient Monte
+  Carlo samples, 32 acyclicity Monte Carlo samples, an Erdős–Rényi prior
+  with two expected edges per node, and target regularization one;
 - DCDI-G: a five-point cross around the reference `(lambda, lambda_R) =
   (0.1, 0.001)` setting; and
 - DCDI-G oracle: graph penalties `{0.01, 0.1, 1}`, with no target penalty
   because the intervention masks are supplied.
+
+BaCaDI is evaluated under a documented model mismatch. The generated SEMs use
+node-specific observational noise variances and stochastic hard interventions
+whose target variances vary by node and environment. After standardizing all
+environments using observational moments, the adapter fits BaCaDI's joint
+linear-Gaussian likelihood with fixed unit observational and intervention
+noise variances and learned intervention means. The BaCaDI comparison therefore
+measures the fixed declared model under misspecification; it is not a correctly
+specified oracle comparison.
+
+The particle, optimization, kernel, graph-prior, and target-regularization
+settings follow the pinned repository parser and launcher defaults; the two
+fixed likelihood-noise values are the standardization adaptation described
+above. The paper's reported configurations were selected through a
+hyperparameter search, so `official_repo_default_joint` is not presented as a
+reproduction of the paper's tuned BaCaDI configuration.
+
+The fixed BaCaDI configuration is computationally intensive and is designated
+Quest-only for the full experiment. It is omitted from the normal local setup
+check and from the fast smoke command below. The adapter, dedicated environment,
+and checkpointed Quest jobs are complete, but no numerical conclusion should
+be drawn until BaCaDI result fragments are available.
 
 These are compact predeclared candidate paths. Earlier exploratory smoke checks
 informed their scales, but GnIES has since been changed from its rank
@@ -261,7 +325,8 @@ post-hoc oracle tuning and is labeled `posthoc_oracle_potential` in both the
 selected-row audit and summary; it should not be interpreted as a deployable
 hyperparameter-selection rule.
 For DCDI's two-dimensional cross, the plot uses a solid graph-penalty branch
-and a dotted target-penalty branch through the reference center.
+and a dotted target-penalty branch through the reference center. BaCaDI
+contributes one point rather than a tuning path.
 
 DCDI receives the same persisted rows as every other method, then applies its
 official implementation's own preprocessing: normalization from the training
@@ -289,7 +354,7 @@ Before launching experiments, run the repository setup check. It loads the
 smallest official instance (`p=10`, `e=1`, replicate 1), checks the required
 Python packages/APIs, the hash-verified DCDI author snapshot, DCDI's R reporting
 dependencies (`pcalg` and `SID`), and the Gurobi setup, then runs one primary
-setting for all eight methods. It prints the
+setting for the eight shared-environment methods. It prints the
 estimated graphs, targets, runtimes, objectives, `d_cpdag`, FDP, and TDP. It
 uses cleaned temporary directories and saves no result or method artifact:
 
@@ -303,6 +368,9 @@ and can be changed with `--time-limit`. The setup check runs the six fast
 methods first, runs both DCDI modes last, and prints a one-minute heartbeat
 while DCDI is working. A method failure is printed, the
 remaining methods are still attempted, and the script exits nonzero.
+BaCaDI is excluded by default because one complete fit can take hours. The
+`--include-bacadi` flag is available for a deliberate Quest-side end-to-end
+check in an environment that contains both the BaCaDI and shared dependencies.
 
 For a checkpointed `p=10, e=1` experiment smoke run, use the main driver. It
 loads the same persisted replicate with all 1000 observational and 200 rows in
@@ -311,6 +379,8 @@ each interventional environment, then runs one primary setting per method:
 ```bash
 python3 experiments/run_main_experiment.py \
   --smoke-test \
+  --methods ps_mip_unknown dcdi_g_unknown utigsp_unknown gnies_unknown \
+            ps_mip_oracle dcdi_g_oracle igsp_oracle gies_oracle \
   --output experiment_results/main_experiment/smoke_grid.csv
 ```
 
@@ -323,8 +393,7 @@ upstream code writes its final DAG only after convergence. Pass a larger
 `--time-limit` to extend this same small smoke instance when validating DCDI on
 faster hardware.
 
-The non-DCDI tuning paths can be checked in seconds on the same smoke
-instance:
+The fast non-DCDI tuning paths can be checked on the same smoke instance:
 
 ```bash
 python3 experiments/run_main_experiment.py \
@@ -343,35 +412,34 @@ python3 experiments/run_main_experiment.py \
 ```
 
 The output is a checkpointed long-form CSV keyed by `p`, `e`, `replicate`,
-`method`, and `setting_id`. The complete grid contains 2,040 rows, including
-480 DCDI fits, so the serial command is primarily for debugging. The Quest
-submission is split into eight method-specific arrays. Each script launches
-exactly 10 tasks; task `r` runs one method on replicate `r` across all three
-node counts and both graph densities.
+`method`, and `setting_id`. The complete nine-method grid contains 2,100 rows:
+the prior 2,040 rows plus one BaCaDI setting for each of the 60 instances. The
+serial command is primarily for schema and checkpoint debugging; the complete
+BaCaDI grid should be run through Quest.
 
-| Method array | Fits per replicate job | Quest partition | Job wall time |
-| --- | ---: | --- | ---: |
-| PS-MIP unknown | 18 | `normal` | 24 hours |
-| DCDI-G unknown | 30 | `normal` | 36 hours |
-| UT-IGSP unknown | 30 | `short` | 1 hour |
-| GnIES unknown | 30 | `normal` | 12 hours |
-| PS-MIP oracle | 18 | `normal` | 24 hours |
-| DCDI-G oracle | 18 | `normal` | 24 hours |
-| IGSP oracle | 30 | `normal` | 12 hours |
-| GIES oracle | 30 | `normal` | 12 hours |
+The eight existing method arrays each launch ten tasks. Task `r` runs one
+method on replicate `r` across all three node counts and both graph densities.
+BaCaDI instead launches 60 tasks, one for each `(p,e,replicate)` cell, because
+placing all six cells in one allocation would make recovery from a slow cell
+unnecessarily coarse.
 
-Each fit has a one-hour cap and each exact metric evaluation has a one-hour cap
-by default. Every array task requests the same 8 CPUs and 16 GB of total
-memory; only its wall time and Quest partition depend on the method. The
-method-specific requests above are deliberately larger than the observed smoke
-times but smaller than the former blanket 48-hour request. In representative
-replicate-1 checks, all 30 UT-IGSP fits used 6.64 seconds of fitting time in
-total. Both DCDI modes exceeded five minutes even on `p=10, e=1`. The revised
-`p={10,20,30}`, `e={1,2}` grid removes the obsolete densest-cell timing probes;
-the existing requests remain conservative until timings from the revised grid
-are available. These checks are estimates rather than guarantees, so the
-checkpoint files remain the recovery mechanism if a replicate is slower on
-Quest.
+| Method array | Task unit | Fits per task | Partition | Wall time | Memory |
+| --- | --- | ---: | --- | ---: | ---: |
+| PS-MIP unknown | one replicate | 18 | `normal` | 24 hours | 16 GB |
+| DCDI-G unknown | one replicate | 30 | `normal` | 36 hours | 16 GB |
+| UT-IGSP unknown | one replicate | 30 | `short` | 1 hour | 16 GB |
+| BaCaDI unknown | one design cell | 1 | `normal` | 48 hours | 32 GB |
+| GnIES unknown | one replicate | 30 | `normal` | 12 hours | 16 GB |
+| PS-MIP oracle | one replicate | 18 | `normal` | 24 hours | 16 GB |
+| DCDI-G oracle | one replicate | 18 | `normal` | 24 hours | 16 GB |
+| IGSP oracle | one replicate | 30 | `normal` | 12 hours | 16 GB |
+| GIES oracle | one replicate | 30 | `normal` | 12 hours | 16 GB |
+
+The eight existing arrays retain one-hour fit and exact-metric caps. The BaCaDI
+array uses a 46-hour fit cap within its 48-hour allocation and a one-hour metric
+cap. Every task requests eight CPUs. These requests are budgets rather than
+runtime claims, so the checkpoint files remain the recovery mechanism when an
+allocation ends before a cell is complete.
 
 After cloning or pulling the repository on Quest, submit from the repository
 root. The committed `data/main_experiment/manifest.json` must already exist:
@@ -380,6 +448,7 @@ root. The committed `data/main_experiment/manifest.json` must already exist:
 sbatch experiments/quest_jobs/main_experiment_ps_mip_unknown.sh
 sbatch experiments/quest_jobs/main_experiment_dcdi_g_unknown.sh
 sbatch experiments/quest_jobs/main_experiment_utigsp_unknown.sh
+sbatch experiments/quest_jobs/main_experiment_bacadi_unknown.sh
 sbatch experiments/quest_jobs/main_experiment_gnies_unknown.sh
 sbatch experiments/quest_jobs/main_experiment_ps_mip_oracle.sh
 sbatch experiments/quest_jobs/main_experiment_dcdi_g_oracle.sh
@@ -387,16 +456,18 @@ sbatch experiments/quest_jobs/main_experiment_igsp_oracle.sh
 sbatch experiments/quest_jobs/main_experiment_gies_oracle.sh
 ```
 
-Submitting all eight scripts creates 80 total jobs and permits up to 80 to run
-concurrently because every array uses `%10`; Quest may keep some pending based
-on available resources and fairshare. Each task owns one checkpoint file,
-`parts/<method>/replicate_NNN.csv`. If an allocation ends before a
-method/replicate finishes, submit only that method's script again. Matching
-successful and failed rows are skipped so a recurring timeout cannot starve
-later settings, and each job continues from its checkpoint. A fragment that
-still contains a failed row exits nonzero even while later settings continue.
-Completed metric rows, including time-limited MIP incumbents, are skipped when
-the same script is submitted again.
+Submitting all nine scripts creates 140 array tasks: 80 replicate-level tasks
+for the existing methods and 60 cell-level BaCaDI tasks. Because each array is
+throttled with `%10`, at most 90 tasks are eligible to run concurrently; Quest
+may keep some pending based on available resources and fairshare. Existing
+methods write `parts/<method>/replicate_NNN.csv`. BaCaDI writes
+`parts/bacadi_unknown/p_P_e_E_replicate_NNN.csv`, so each slow design cell has
+an independent checkpoint. If an allocation ends before a task finishes,
+submit only that method's script again. Matching successful and failed rows are
+skipped so a recurring timeout cannot starve later settings, and each task
+continues from its checkpoint. A fragment that still contains a failed row
+exits nonzero. Completed metric rows, including time-limited MIP incumbents,
+are skipped when the same script is submitted again.
 
 To plot whatever results are currently available, run this zero-argument
 script from the repository root:
@@ -406,10 +477,13 @@ python3 analysis/plot_main_experiment_results.py
 ```
 
 It scans `experiment_results/main_experiment/parts/` automatically. The graph
-plot contains every method with structural metrics. When PS-MIP and UT-IGSP
-both have a common set of replicates containing their complete tuning paths,
-the script also writes the environment-specific target TPR--FPR comparison.
-The PNG and PDF files are written to
+plot contains every non-DCDI method for which structural metrics are currently
+available, so it does not wait for BaCaDI. The target plot similarly uses the
+available full target-matrix methods among PS-MIP, UT-IGSP, and BaCaDI. A method
+is added to a cell once at least one replicate contains its complete setting
+path; when several methods are present, the plot uses their common complete
+replicates. Missing BaCaDI fragments therefore do not suppress the existing
+PS-MIP and UT-IGSP comparison. The PNG and PDF files are written to
 `experiment_results/main_experiment/summary/`.
 
 For strict final aggregation that requires every planned row, run:
@@ -426,12 +500,12 @@ python3 analysis/aggregate_main_experiment.py \
 This writes `main_tdp_fdp.{png,pdf}`, `target_tpr_fpr.{png,pdf}`, their
 setting-level summaries, the raw best-setting selections,
 `best_dcpdag_summary.{csv,tex}`, and completeness/shared-data diagnostics. The
-target comparison uses only replicates containing every PS-MIP and UT-IGSP
-setting. Aggregation also checks every fragment against the selected dataset
-manifest, so results from different generated suites cannot be mixed
-accidentally. Its `--require-complete` check stops before creating a final
-graph plot or truth-selected table unless all 80 method/replicate fragments
-are complete.
+target comparison uses common complete replicates for the target-matrix
+methods available in each cell. Aggregation also checks every fragment against
+the selected dataset manifest, so results from different generated suites
+cannot be mixed accidentally. Its `--require-complete` check stops before
+creating a final graph plot or truth-selected table unless all 2,100 planned
+rows represented by the 140 task-owned checkpoint fragments are complete.
 
 `--time-limit` covers Gurobi's solve and the external baseline fits. PS-MIP's
 screening and local-score precomputation happen before Gurobi and are included
@@ -522,11 +596,23 @@ python3 IGSP.py --p 10 --e 1 --replicate 1
 python3 GIES.py --p 10 --e 1 --replicate 1
 ```
 
+From the dedicated `bacadi39` environment, the corresponding standalone
+BaCaDI command is:
+
+```bash
+python3 BaCaDI.py --p 10 --e 1 --replicate 1
+```
+
+This command is useful for Quest-side validation of one persisted instance; it
+is not the recommended way to launch the complete BaCaDI grid.
+
 `DCDI.py` uses cleaned temporary storage unless `--artifact-dir` is supplied.
 `IGSP.py` and `GIES.py` are known-target oracles and therefore read the stored
-target matrix for the selected instance. GnIES is called directly from its authors'
-Python package by the main runner and the no-save setup check; there is no
-local GnIES algorithm implementation.
+target matrix for the selected instance. GnIES is called directly from its
+authors' Python package by the main runner and the no-save setup check; there
+is no local GnIES algorithm implementation. BaCaDI uses the hash-verified
+vendored author package through `BaCaDI.py` and does not receive the generated
+target matrix.
 
 ## Legacy archive
 
@@ -582,6 +668,7 @@ should focus on:
 
 - validating `MIP.py` through small cases with known optima;
 - validating the redesigned main experiment at cluster scale;
+- running the Quest-only BaCaDI array before reporting its comparison;
 - adding Sachs-data preprocessing and evaluation;
 - validating the tuning paths and post-hoc potential summaries at scale; and
 - validating the archived provenance bundle only when an older result must be

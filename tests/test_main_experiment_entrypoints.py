@@ -10,6 +10,7 @@ from unittest import mock
 
 import numpy as np
 
+import BaCaDI
 import DCDI
 import IGSP
 from analysis import aggregate_main_experiment
@@ -64,7 +65,7 @@ class PersistedStandaloneDataTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         for name in (
             "MIP.py", "MIP_profiled.py", "DCDI.py", "UTIGSP.py", "IGSP.py",
-            "GIES.py",
+            "GIES.py", "BaCaDI.py",
         ):
             source = (root / name).read_text()
             self.assertNotIn("SyntheticData", source, name)
@@ -120,6 +121,62 @@ class PersistedStandaloneDataTests(unittest.TestCase):
         self.assertAlmostEqual(result.iloc[0]["target_tpr"], 4 / 5)
         self.assertAlmostEqual(result.iloc[0]["target_fpr"], 1 / 45)
 
+    def test_pending_bacadi_rows_do_not_suppress_available_target_paths(self):
+        rows = []
+        for replicate in (1, 2):
+            for method in ("ps_mip_unknown", "utigsp_unknown"):
+                rows.extend(
+                    {
+                        "p": 10,
+                        "e": 1,
+                        "replicate": replicate,
+                        "method": method,
+                        "setting_id": setting_id,
+                    }
+                    for setting_id in run_main_experiment.method_setting_ids(method)
+                )
+        frame = aggregate_main_experiment.pd.DataFrame(rows)
+
+        common, replicate_ids = aggregate_main_experiment._common_target_rows(frame)
+
+        self.assertEqual(set(common["method"]), {"ps_mip_unknown", "utigsp_unknown"})
+        self.assertEqual(set(common["replicate"]), {1, 2})
+        self.assertEqual(replicate_ids[(10, 1)], (1, 2))
+
+    def test_available_bacadi_point_uses_common_complete_replicates(self):
+        rows = []
+        for replicate in (1, 2):
+            for method in ("ps_mip_unknown", "utigsp_unknown"):
+                rows.extend(
+                    {
+                        "p": 10,
+                        "e": 1,
+                        "replicate": replicate,
+                        "method": method,
+                        "setting_id": setting_id,
+                    }
+                    for setting_id in run_main_experiment.method_setting_ids(method)
+                )
+        rows.append(
+            {
+                "p": 10,
+                "e": 1,
+                "replicate": 1,
+                "method": "bacadi_unknown",
+                "setting_id": "official_repo_default_joint",
+            }
+        )
+        frame = aggregate_main_experiment.pd.DataFrame(rows)
+
+        common, replicate_ids = aggregate_main_experiment._common_target_rows(frame)
+
+        self.assertEqual(
+            set(common["method"]),
+            {"ps_mip_unknown", "utigsp_unknown", "bacadi_unknown"},
+        )
+        self.assertEqual(set(common["replicate"]), {1})
+        self.assertEqual(replicate_ids[(10, 1)], (1,))
+
 
 class NoSaveSetupCheckTests(unittest.TestCase):
     @staticmethod
@@ -130,6 +187,8 @@ class NoSaveSetupCheckTests(unittest.TestCase):
             time_limit=10.0,
             metric_time_limit=10.0,
             dcdi_root=root / "external" / "dcdi",
+            bacadi_root=root / "external" / "bacadi",
+            include_bacadi=False,
             rscript="Rscript",
         )
 
@@ -428,6 +487,68 @@ class NoSaveSetupCheckTests(unittest.TestCase):
 
         np.testing.assert_array_equal(fit.call_args.args[1], targets)
         self.assertNotIn("estimated_targets", result)
+
+    def test_bacadi_unknown_reports_the_paired_particle_targets(self):
+        data = [np.arange(6.0).reshape(3, 2), np.ones((2, 2))]
+        true_targets = np.array([[0, 1]], dtype=int)
+        estimated_dag = np.array([[0, 1], [0, 0]], dtype=int)
+        estimated_targets = np.array([[1, 0]], dtype=int)
+        estimated_icpdag = np.array([[0, 1], [1, 0]], dtype=int)
+        metadata = {
+            "fit_seconds": 2.5,
+            "selected_log_weight": -3.0,
+            "acyclic_particles": 7,
+            "posterior_particles": 20,
+        }
+        args = SimpleNamespace(
+            time_limit=10,
+            bacadi_root=Path("/official/bacadi"),
+        )
+        setting = {"target_regularization": 1.0}
+        with (
+            mock.patch.object(
+                BaCaDI,
+                "fit",
+                return_value=(estimated_dag, estimated_targets, metadata),
+            ) as fit,
+            mock.patch(
+                "src.utils.interventional_cpdag",
+                return_value=estimated_icpdag,
+            ) as interventional_cpdag,
+        ):
+            result = run_main_experiment._run_method(
+                "bacadi_unknown",
+                data,
+                true_targets,
+                args,
+                setting,
+                2,
+                1,
+                1,
+                7,
+            )
+
+        fit.assert_called_once_with(
+            data,
+            seed=7,
+            source_path=Path("/official/bacadi"),
+            target_regularization=1.0,
+        )
+        interventional_cpdag.assert_called_once()
+        np.testing.assert_array_equal(
+            interventional_cpdag.call_args.args[0], estimated_dag
+        )
+        np.testing.assert_array_equal(
+            interventional_cpdag.call_args.args[1], estimated_targets
+        )
+        np.testing.assert_array_equal(result["estimated_icpdag"], estimated_icpdag)
+        np.testing.assert_array_equal(result["estimated_targets"], estimated_targets)
+        self.assertEqual(result["fit_seconds"], 2.5)
+        self.assertEqual(result["objective_value"], -3.0)
+        self.assertEqual(
+            result["solver_status"],
+            "highest_weight_acyclic_joint_particle;acyclic=7/20",
+        )
 
 
 if __name__ == "__main__":

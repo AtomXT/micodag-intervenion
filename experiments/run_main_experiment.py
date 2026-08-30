@@ -28,6 +28,12 @@ if str(PROJECT_ROOT) not in sys.path:
 
 DEPENDENCY_LOCK_PATH = PROJECT_ROOT / "requirements-dcdi.txt"
 DEPENDENCY_LOCK_SHA256 = hashlib.sha256(DEPENDENCY_LOCK_PATH.read_bytes()).hexdigest()
+BACADI_DEPENDENCY_LOCK_PATH = PROJECT_ROOT / "requirements-bacadi.txt"
+BACADI_DEPENDENCY_LOCK_SHA256 = hashlib.sha256(
+    BACADI_DEPENDENCY_LOCK_PATH.read_bytes()
+).hexdigest()
+BACADI_ADAPTER_PATH = PROJECT_ROOT / "BaCaDI.py"
+BACADI_ADAPTER_SHA256 = hashlib.sha256(BACADI_ADAPTER_PATH.read_bytes()).hexdigest()
 
 from src.main_experiment_data import (
     DATA_FORMAT_VERSION,
@@ -56,6 +62,7 @@ METHODS = (
     "ps_mip_unknown",
     "dcdi_g_unknown",
     "utigsp_unknown",
+    "bacadi_unknown",
     "gnies_unknown",
     "ps_mip_oracle",
     "dcdi_g_oracle",
@@ -69,6 +76,7 @@ PRIMARY_SETTING_IDS = {
     "ps_mip_unknown": "bic_x1",
     "dcdi_g_unknown": "g0p1_t0p001",
     "utigsp_unknown": "alpha_1em05",
+    "bacadi_unknown": "official_repo_default_joint",
     "gnies_unknown": "bic_x1",
     "ps_mip_oracle": "g1",
     "dcdi_g_oracle": "g0p1",
@@ -123,6 +131,12 @@ OFFICIAL_IMPLEMENTATIONS = {
         "source_commit": "c664971bbffa3a42097564d58a92b763fe09c4f5",
         "tested_algorithm_package": "graphical-model-learning==0.1a8",
         "algorithm_source_url": "https://github.com/uhlerlab/graphical_model_learning",
+    },
+    "bacadi_unknown": {
+        "name": "BaCaDI",
+        "source_url": "https://github.com/haeggee/bacadi",
+        "source_version": "b2c27d5fc560f7e0ec2aa282cd2e0a0e6e8637ea",
+        "entrypoint": "bacadi.inference.bacadi_joint.BaCaDIJoint",
     },
     "igsp_oracle": {
         "name": "IGSP",
@@ -255,6 +269,13 @@ def _probe_selected_python_apis(methods):
         statements.extend(
             ["import ges, gnies", "assert callable(gnies.fit)"]
         )
+    if "bacadi_unknown" in selected:
+        statements.extend(
+            [
+                "from BaCaDI import validate_runtime",
+                "assert callable(validate_runtime)",
+            ]
+        )
     if "gies_oracle" in selected:
         statements.extend(
             [
@@ -305,6 +326,15 @@ def _validate_competitor_runtime(args):
         runtime["igsp_oracle"] = identified_python
     if "gnies_unknown" in selected:
         runtime["gnies_unknown"] = identified_python
+    if "bacadi_unknown" in selected:
+        from BaCaDI import validate_runtime
+
+        try:
+            runtime["bacadi_unknown"] = validate_runtime(args.bacadi_root)
+        except Exception as error:
+            raise OfficialRuntimeError(
+                f"official BaCaDI runtime check failed: {error}"
+            ) from error
     if "gies_oracle" in selected:
         from GIES import validate_runtime
 
@@ -471,6 +501,8 @@ def method_setting_ids(method):
         return [f"g{_number_id(x)}" for x in DCDI_ORACLE_GRAPH_PENALTIES]
     if method in {"utigsp_unknown", "igsp_oracle"}:
         return [f"alpha_{_number_id(x)}" for x in UTIGSP_ALPHAS]
+    if method == "bacadi_unknown":
+        return ["official_repo_default_joint"]
     if method in {"gnies_unknown", "gies_oracle"}:
         return [f"bic_x{_number_id(x)}" for x in SCORE_BIC_MULTIPLIERS]
     raise ValueError(f"unknown method {method}")
@@ -540,6 +572,17 @@ def _method_settings(method, data):
                 "alpha": alpha,
             }
             for alpha in UTIGSP_ALPHAS
+        ]
+    if method == "bacadi_unknown":
+        from BaCaDI import DEFAULT_TARGET_REGULARIZATION
+
+        return [
+            {
+                "setting_id": "official_repo_default_joint",
+                "tuning_parameter": "fixed_author_default_configuration",
+                "tuning_value": DEFAULT_TARGET_REGULARIZATION,
+                "target_regularization": DEFAULT_TARGET_REGULARIZATION,
+            }
         ]
     if method in {"gnies_unknown", "gies_oracle"}:
         base = _score_bic_penalty(data)
@@ -646,6 +689,86 @@ def _declared_settings(method, data, setting, args):
             "known_targets": known_targets,
         }
         return "alpha_grid", "", "", config
+    if method == "bacadi_unknown":
+        from BaCaDI import (
+            DEFAULT_ALPHA_LINEAR,
+            DEFAULT_BETA_LINEAR,
+            DEFAULT_EDGE_MEAN,
+            DEFAULT_EDGE_SD,
+            DEFAULT_GRADIENT_ESTIMATOR,
+            DEFAULT_GRAPH_PRIOR,
+            DEFAULT_GRAPH_PRIOR_EDGES_PER_NODE,
+            DEFAULT_H_INTERVENTION,
+            DEFAULT_H_LATENT,
+            DEFAULT_H_THETA,
+            DEFAULT_INITIAL_EDGE_SD,
+            DEFAULT_INTERVENTION_MEAN,
+            DEFAULT_INTERVENTION_NOISE,
+            DEFAULT_INTERVENTION_PRIOR_MEAN,
+            DEFAULT_INTERVENTION_PRIOR_SD,
+            DEFAULT_INTERVENTIONS_PER_ENVIRONMENT,
+            DEFAULT_KERNEL,
+            DEFAULT_MODEL_PRIOR,
+            DEFAULT_N_ACYCLICITY_MC_SAMPLES,
+            DEFAULT_N_GRAD_MC_SAMPLES,
+            DEFAULT_N_PARTICLES,
+            DEFAULT_N_STEPS,
+            DEFAULT_OBSERVATION_NOISE,
+            DEFAULT_OPTIMIZER_STEP_SIZE,
+            DEFAULT_SCORE_FUNCTION_BASELINE,
+            DEFAULT_TAU,
+            JAX_COMPATIBILITY_VERSION,
+        )
+
+        config = {
+            **common,
+            **OFFICIAL_IMPLEMENTATIONS[method],
+            "validated_runtime": official_runtime,
+            "implementation": "hash_verified_vendored_author_package",
+            "runtime_compatibility": JAX_COMPATIBILITY_VERSION,
+            "bacadi_dependency_lock_sha256": BACADI_DEPENDENCY_LOCK_SHA256,
+            "adapter_sha256": BACADI_ADAPTER_SHA256,
+            "variant": "joint_linear_gaussian",
+            "posterior_summary": "highest_weight_acyclic_joint_particle",
+            "preprocessing": "observational_mean_and_population_sd",
+            "kernel": DEFAULT_KERNEL,
+            "graph_prior": DEFAULT_GRAPH_PRIOR,
+            "graph_prior_edges_per_node": DEFAULT_GRAPH_PRIOR_EDGES_PER_NODE,
+            "model_prior": DEFAULT_MODEL_PRIOR,
+            "alpha_linear": DEFAULT_ALPHA_LINEAR,
+            "beta_linear": DEFAULT_BETA_LINEAR,
+            "tau": DEFAULT_TAU,
+            "h_latent": DEFAULT_H_LATENT,
+            "h_theta": DEFAULT_H_THETA,
+            "h_intervention": DEFAULT_H_INTERVENTION,
+            "interventions_per_environment_prior": (
+                DEFAULT_INTERVENTIONS_PER_ENVIRONMENT
+            ),
+            "n_steps": DEFAULT_N_STEPS,
+            "n_particles": DEFAULT_N_PARTICLES,
+            "n_grad_mc_samples": DEFAULT_N_GRAD_MC_SAMPLES,
+            "n_acyclicity_mc_samples": DEFAULT_N_ACYCLICITY_MC_SAMPLES,
+            "gradient_estimator": DEFAULT_GRADIENT_ESTIMATOR,
+            "score_function_baseline": DEFAULT_SCORE_FUNCTION_BASELINE,
+            "target_regularization": setting["target_regularization"],
+            "optimizer": "rmsprop",
+            "optimizer_step_size": DEFAULT_OPTIMIZER_STEP_SIZE,
+            "observation_noise_after_standardization": DEFAULT_OBSERVATION_NOISE,
+            "intervention_noise_after_standardization": DEFAULT_INTERVENTION_NOISE,
+            "edge_prior_mean": DEFAULT_EDGE_MEAN,
+            "edge_prior_sd": DEFAULT_EDGE_SD,
+            "initial_edge_sd": DEFAULT_INITIAL_EDGE_SD,
+            "intervention_mean": DEFAULT_INTERVENTION_MEAN,
+            "intervention_prior_mean": DEFAULT_INTERVENTION_PRIOR_MEAN,
+            "intervention_prior_sd": DEFAULT_INTERVENTION_PRIOR_SD,
+            "known_targets": False,
+        }
+        return (
+            "fixed_author_default_configuration",
+            "",
+            setting["target_regularization"],
+            config,
+        )
     if method == "gnies_unknown":
         return (
             "bic_multiplier_half_logN", setting["graph_penalty"], "",
@@ -880,6 +1003,32 @@ def _run_gnies(data, args, setting):
     }
 
 
+def _run_bacadi(data, args, setting, seed):
+    from BaCaDI import fit
+    from src.utils import interventional_cpdag
+
+    with _time_limit(args.time_limit, "BaCaDI fit"):
+        dag, targets, metadata = fit(
+            data,
+            seed=seed,
+            source_path=args.bacadi_root,
+            target_regularization=setting["target_regularization"],
+        )
+    targets = np.asarray(targets, dtype=int)
+    return {
+        "estimated_icpdag": interventional_cpdag(dag, targets),
+        "estimated_targets": targets,
+        "fit_seconds": metadata["fit_seconds"],
+        "solve_seconds": metadata["fit_seconds"],
+        "objective_value": metadata["selected_log_weight"],
+        "solver_status": (
+            "highest_weight_acyclic_joint_particle;"
+            f"acyclic={metadata['acyclic_particles']}/"
+            f"{metadata['posterior_particles']}"
+        ),
+    }
+
+
 def _run_gies(data, true_targets, args, setting):
     from GIES import fit
 
@@ -910,6 +1059,8 @@ def _run_method(
         )
     if method == "utigsp_unknown":
         return _run_utigsp(data, args, setting, seed)
+    if method == "bacadi_unknown":
+        return _run_bacadi(data, args, setting, seed)
     if method == "gnies_unknown":
         return _run_gnies(data, args, setting)
     if method == "ps_mip_oracle":
@@ -1204,6 +1355,9 @@ def _parse_args():
         "--dcdi-root", type=Path, default=PROJECT_ROOT / "external" / "dcdi"
     )
     parser.add_argument(
+        "--bacadi-root", type=Path, default=PROJECT_ROOT / "external" / "bacadi"
+    )
+    parser.add_argument(
         "--rscript",
         default="Rscript",
         help="Rscript executable used only by unmodified DCDI reporting",
@@ -1270,6 +1424,7 @@ def _parse_args():
     args.output = args.output.expanduser().resolve()
     args.data_root = args.data_root.expanduser().resolve()
     args.dcdi_root = args.dcdi_root.expanduser().resolve()
+    args.bacadi_root = args.bacadi_root.expanduser().resolve()
     args.n_observational = N_OBSERVATIONAL
     args.n_interventional = N_INTERVENTIONAL
     if args.smoke_test:

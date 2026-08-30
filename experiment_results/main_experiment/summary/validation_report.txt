@@ -1,12 +1,12 @@
 input files: 80
-expected rows: 2040
+expected rows: 2100
 observed version-10 rows: 1988
 expected-key rows: 1988
 successful metric rows: 1426
-missing rows: 52
+missing rows: 112
 unexpected rows: 0
 unsuccessful rows: 562
-incomplete method/replicate grids: 157
+incomplete method/replicate grids: 217
 
 status counts:
 method          status       

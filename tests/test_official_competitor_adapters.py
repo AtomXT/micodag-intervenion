@@ -10,6 +10,7 @@ from unittest import mock
 
 import numpy as np
 
+import BaCaDI
 import DCDI
 import GIES
 import IGSP
@@ -190,6 +191,126 @@ class DCDIOfficialSourceTests(unittest.TestCase):
         self.assertNotIn("external/dcdi", source)
 
 
+class BaCaDIOfficialSourceTests(unittest.TestCase):
+    @staticmethod
+    def _pack_graphs(graphs):
+        values = np.asarray(graphs, dtype=np.uint8)
+        return np.packbits(
+            values.reshape((len(values), -1)), axis=1, bitorder="little"
+        )
+
+    def test_vendored_author_snapshot_matches_pinned_manifest(self):
+        checkout = BaCaDI._validate_checkout(BaCaDI.DEFAULT_BACADI_PATH)
+        digest, file_count = BaCaDI._python_tree_digest(checkout)
+
+        self.assertEqual(checkout, BaCaDI.DEFAULT_BACADI_PATH.resolve())
+        self.assertEqual(digest, BaCaDI.BACADI_PYTHON_TREE_SHA256)
+        self.assertEqual(file_count, 31)
+        self.assertEqual(
+            main_experiment.OFFICIAL_IMPLEMENTATIONS["bacadi_unknown"][
+                "source_version"
+            ],
+            BaCaDI.BACADI_COMMIT,
+        )
+        self.assertEqual(
+            main_experiment.OFFICIAL_IMPLEMENTATIONS["bacadi_unknown"][
+                "source_url"
+            ],
+            BaCaDI.BACADI_SOURCE_URL,
+        )
+
+    def test_standardization_uses_observational_moments_only(self):
+        observational = np.array([[1.0, 10.0], [3.0, 14.0]])
+        intervention = np.array([[102.0, 8.0], [0.0, 16.0]])
+
+        stacked, environments, center, scale = BaCaDI._standardized_stack(
+            [observational, intervention]
+        )
+
+        np.testing.assert_allclose(center, [2.0, 12.0])
+        np.testing.assert_allclose(scale, [1.0, 2.0])
+        np.testing.assert_allclose(
+            stacked,
+            [[-1.0, -1.0], [1.0, 1.0], [100.0, -2.0], [-2.0, 2.0]],
+        )
+        np.testing.assert_array_equal(environments, [0, 0, 1, 1])
+        self.assertEqual(environments.dtype, np.dtype(np.int32))
+
+    def test_standardization_rejects_zero_observational_variance(self):
+        with self.assertRaisesRegex(ValueError, "positive variance"):
+            BaCaDI._standardized_stack(
+                [np.ones((3, 2)), np.arange(4.0).reshape(2, 2)]
+            )
+
+    def test_particle_selection_keeps_graph_and_targets_paired(self):
+        cyclic = np.array(
+            [[0, 1, 0], [0, 0, 1], [1, 0, 0]], dtype=int
+        )
+        selected_dag = np.array(
+            [[0, 1, 0], [0, 0, 1], [0, 0, 0]], dtype=int
+        )
+        lower_weight_dag = np.array(
+            [[0, 0, 0], [1, 0, 0], [0, 0, 0]], dtype=int
+        )
+        graphs = np.stack([cyclic, selected_dag, lower_weight_dag])
+        targets = np.zeros((3, 2, 3), dtype=int)
+        targets[0, :, 0] = 1
+        targets[1, :, 1] = 1
+        targets[2, :, 2] = 1
+        distribution = (
+            self._pack_graphs(graphs),
+            {"unused_parameter_particles": True},
+            targets,
+            np.array([100.0, 3.0, 2.0]),
+        )
+
+        dag, selected_targets, metadata = BaCaDI._select_highest_weight_acyclic(
+            distribution, p=3, environments=2
+        )
+
+        np.testing.assert_array_equal(dag, selected_dag)
+        np.testing.assert_array_equal(selected_targets, targets[1])
+        self.assertEqual(metadata["posterior_particles"], 3)
+        self.assertEqual(metadata["acyclic_particles"], 2)
+        self.assertEqual(metadata["selected_particle"], 1)
+        self.assertEqual(metadata["selected_log_weight"], 3.0)
+        self.assertEqual(
+            metadata["point_estimate"],
+            "highest_weight_acyclic_joint_particle",
+        )
+
+    def test_particle_selection_rejects_a_posterior_without_finite_dags(self):
+        cyclic = np.array([[0, 1], [1, 0]], dtype=int)
+        acyclic = np.array([[0, 1], [0, 0]], dtype=int)
+        distribution = (
+            self._pack_graphs([cyclic, acyclic]),
+            None,
+            np.zeros((2, 1, 2), dtype=int),
+            np.array([1.0, -np.inf]),
+        )
+
+        with self.assertRaisesRegex(
+            BaCaDI.BaCaDIError, "no finite-weight acyclic particle"
+        ):
+            BaCaDI._select_highest_weight_acyclic(
+                distribution, p=2, environments=1
+            )
+
+    def test_particle_selection_rejects_nonbinary_target_particles(self):
+        dag = np.array([[0, 1], [0, 0]], dtype=int)
+        distribution = (
+            self._pack_graphs([dag]),
+            None,
+            np.array([[[0.5, 1.0]]]),
+            np.array([0.0]),
+        )
+
+        with self.assertRaisesRegex(BaCaDI.BaCaDIError, "finite and binary"):
+            BaCaDI._select_highest_weight_acyclic(
+                distribution, p=2, environments=1
+            )
+
+
 class GIESOfficialSourceTests(unittest.TestCase):
     def test_adapter_passes_exact_environments_targets_and_penalty_to_package(self):
         data = [
@@ -305,13 +426,20 @@ class MainRunnerOfficialSourceTests(unittest.TestCase):
             main_experiment.subprocess, "run", return_value=completed
         ) as run:
             main_experiment._probe_selected_python_apis(
-                ["utigsp_unknown", "gnies_unknown", "gies_oracle"]
+                [
+                    "utigsp_unknown",
+                    "bacadi_unknown",
+                    "gnies_unknown",
+                    "gies_oracle",
+                ]
             )
         probe = run.call_args.args[0][-1]
         compile(probe, "<official-api-preflight>", "exec")
         self.assertIn("unknown_target_igsp", probe)
         self.assertIn("igsp", probe)
         self.assertIn("import ges, gnies", probe)
+        self.assertIn("from BaCaDI import validate_runtime", probe)
+        self.assertIn("assert callable(validate_runtime)", probe)
         self.assertIn("from gies.scores import GaussIntL0Pen", probe)
         self.assertEqual(
             run.call_args.kwargs["timeout"],
@@ -403,7 +531,44 @@ class MainRunnerOfficialSourceTests(unittest.TestCase):
         self.assertEqual(runtime["dcdi_g_unknown"], reported)
         self.assertEqual(runtime["dcdi_g_oracle"], reported)
 
-    def test_quest_has_one_consistent_ten_replicate_array_per_method(self):
+    def test_bacadi_preflight_records_the_validated_author_runtime(self):
+        args = SimpleNamespace(
+            methods=["bacadi_unknown"],
+            bacadi_root=Path("/official/bacadi"),
+            rscript="Rscript",
+        )
+        reported = {
+            "source_url": BaCaDI.BACADI_SOURCE_URL,
+            "source_commit": BaCaDI.BACADI_COMMIT,
+            "source_tree_sha256": BaCaDI.BACADI_PYTHON_TREE_SHA256,
+            "jax_backend": "cpu",
+        }
+        with (
+            mock.patch.object(
+                main_experiment,
+                "_identify_python_distributions",
+                return_value={},
+            ),
+            mock.patch.object(main_experiment, "_probe_selected_python_apis"),
+            mock.patch.object(
+                main_experiment,
+                "_resolved_python_environment",
+                return_value={"sha256": "shared-environment"},
+            ),
+            mock.patch.object(
+                BaCaDI, "validate_runtime", return_value=reported
+            ) as validate_runtime,
+        ):
+            runtime = main_experiment._validate_competitor_runtime(args)
+
+        validate_runtime.assert_called_once_with(Path("/official/bacadi"))
+        self.assertEqual(runtime["bacadi_unknown"], reported)
+        self.assertEqual(
+            runtime["shared_python"]["resolved_environment"],
+            {"sha256": "shared-environment"},
+        )
+
+    def test_quest_has_expected_method_specific_arrays(self):
         job_dir = (
             Path(__file__).resolve().parents[1]
             / "experiments"
@@ -421,6 +586,7 @@ class MainRunnerOfficialSourceTests(unittest.TestCase):
             "ps_mip_unknown": ("normal", "24:00:00"),
             "dcdi_g_unknown": ("normal", "36:00:00"),
             "utigsp_unknown": ("short", "01:00:00"),
+            "bacadi_unknown": ("normal", "48:00:00"),
             "gnies_unknown": ("normal", "12:00:00"),
             "ps_mip_oracle": ("normal", "24:00:00"),
             "dcdi_g_oracle": ("normal", "24:00:00"),
@@ -432,14 +598,30 @@ class MainRunnerOfficialSourceTests(unittest.TestCase):
                 script = path.read_text()
                 partition, wall_time = expected_schedule[method]
                 self.assertIn("#SBATCH --cpus-per-task=8", script)
-                self.assertIn("#SBATCH --mem=16G", script)
                 self.assertIn(f"#SBATCH --partition={partition}", script)
                 self.assertIn(f"#SBATCH --time={wall_time}", script)
-                self.assertIn("#SBATCH --array=1-10%10", script)
                 self.assertNotIn("--threads", script)
-                self.assertIn("--time-limit 3600", script)
                 self.assertIn(f"--methods {method}", script)
-                self.assertIn(f"parts/{method}/replicate_", script)
+                if method == "bacadi_unknown":
+                    self.assertIn("#SBATCH --mem=32G", script)
+                    self.assertIn("#SBATCH --array=0-59%10", script)
+                    self.assertIn("source activate bacadi39", script)
+                    self.assertIn("replicate=$((task / 6 + 1))", script)
+                    self.assertIn("cell=$((task % 6))", script)
+                    self.assertIn("p_index=$((cell / 2))", script)
+                    self.assertIn("edge_multiplier=$((cell % 2 + 1))", script)
+                    self.assertIn('--p-values "$p"', script)
+                    self.assertIn('--edge-multipliers "$edge_multiplier"', script)
+                    self.assertIn("--time-limit 165600", script)
+                    self.assertIn(
+                        "parts/bacadi_unknown/p_${p}_e_${edge_multiplier}_replicate_",
+                        script,
+                    )
+                else:
+                    self.assertIn("#SBATCH --mem=16G", script)
+                    self.assertIn("#SBATCH --array=1-10%10", script)
+                    self.assertIn("--time-limit 3600", script)
+                    self.assertIn(f"parts/{method}/replicate_", script)
                 if method.startswith("dcdi_g_"):
                     self.assertIn("module load R/4.4.0", script)
                 else:
@@ -471,6 +653,7 @@ class MainRunnerOfficialSourceTests(unittest.TestCase):
         for method in (
             "dcdi_g_unknown",
             "utigsp_unknown",
+            "bacadi_unknown",
             "gnies_unknown",
             "dcdi_g_oracle",
             "igsp_oracle",
@@ -484,6 +667,98 @@ class MainRunnerOfficialSourceTests(unittest.TestCase):
             self.assertTrue(
                 "source_version" in config or "tested_version" in config
             )
+
+    def test_bacadi_fixed_setting_records_runtime_source_and_summary(self):
+        data = [
+            np.array([[0.0, 0.0], [1.0, 1.0]]),
+            np.array([[2.0, 1.0]]),
+        ]
+        validated_runtime = {
+            "source_commit": BaCaDI.BACADI_COMMIT,
+            "source_tree_sha256": BaCaDI.BACADI_PYTHON_TREE_SHA256,
+            "jax_backend": "cpu",
+        }
+        args = SimpleNamespace(
+            generator_numpy_version="2.0.2",
+            time_limit=165600,
+            metric_time_limit=3600,
+            rscript="Rscript",
+            official_runtime={"bacadi_unknown": validated_runtime},
+        )
+
+        settings = main_experiment._method_settings("bacadi_unknown", data)
+        self.assertEqual(len(settings), 1)
+        self.assertEqual(
+            settings[0]["setting_id"],
+            "official_repo_default_joint",
+        )
+        self.assertEqual(
+            settings[0]["setting_id"],
+            main_experiment.PRIMARY_SETTING_IDS["bacadi_unknown"],
+        )
+        self.assertEqual(
+            settings[0]["tuning_parameter"],
+            "fixed_author_default_configuration",
+        )
+        self.assertEqual(
+            main_experiment.method_setting_ids("bacadi_unknown"),
+            [settings[0]["setting_id"]],
+        )
+        tuning_rule, graph_penalty, target_penalty, config = (
+            main_experiment._declared_settings(
+                "bacadi_unknown", data, settings[0], args
+            )
+        )
+
+        self.assertEqual(tuning_rule, "fixed_author_default_configuration")
+        self.assertEqual(graph_penalty, "")
+        self.assertEqual(target_penalty, BaCaDI.DEFAULT_TARGET_REGULARIZATION)
+        self.assertEqual(config["source_url"], BaCaDI.BACADI_SOURCE_URL)
+        self.assertEqual(config["source_version"], BaCaDI.BACADI_COMMIT)
+        self.assertEqual(config["validated_runtime"], validated_runtime)
+        self.assertEqual(
+            config["bacadi_dependency_lock_sha256"],
+            main_experiment.BACADI_DEPENDENCY_LOCK_SHA256,
+        )
+        self.assertEqual(
+            config["runtime_compatibility"], BaCaDI.JAX_COMPATIBILITY_VERSION
+        )
+        self.assertEqual(config["variant"], "joint_linear_gaussian")
+        self.assertEqual(
+            config["posterior_summary"],
+            "highest_weight_acyclic_joint_particle",
+        )
+        self.assertEqual(
+            config["preprocessing"],
+            "observational_mean_and_population_sd",
+        )
+        self.assertEqual(config["adapter_sha256"], main_experiment.BACADI_ADAPTER_SHA256)
+        self.assertEqual(config["kernel"], BaCaDI.DEFAULT_KERNEL)
+        self.assertEqual(config["graph_prior"], BaCaDI.DEFAULT_GRAPH_PRIOR)
+        self.assertEqual(config["model_prior"], BaCaDI.DEFAULT_MODEL_PRIOR)
+        self.assertEqual(config["alpha_linear"], BaCaDI.DEFAULT_ALPHA_LINEAR)
+        self.assertEqual(config["beta_linear"], BaCaDI.DEFAULT_BETA_LINEAR)
+        self.assertEqual(config["tau"], BaCaDI.DEFAULT_TAU)
+        self.assertEqual(config["h_latent"], BaCaDI.DEFAULT_H_LATENT)
+        self.assertEqual(config["h_theta"], BaCaDI.DEFAULT_H_THETA)
+        self.assertEqual(
+            config["h_intervention"], BaCaDI.DEFAULT_H_INTERVENTION
+        )
+        self.assertEqual(BaCaDI.DEFAULT_N_STEPS, 3_000)
+        self.assertEqual(config["n_steps"], BaCaDI.DEFAULT_N_STEPS)
+        self.assertEqual(config["n_particles"], BaCaDI.DEFAULT_N_PARTICLES)
+        self.assertEqual(
+            config["graph_prior_edges_per_node"],
+            BaCaDI.DEFAULT_GRAPH_PRIOR_EDGES_PER_NODE,
+        )
+        self.assertEqual(
+            config["n_grad_mc_samples"], BaCaDI.DEFAULT_N_GRAD_MC_SAMPLES
+        )
+        self.assertEqual(
+            config["n_acyclicity_mc_samples"],
+            BaCaDI.DEFAULT_N_ACYCLICITY_MC_SAMPLES,
+        )
+        self.assertFalse(config["known_targets"])
 
     def test_utigsp_provenance_does_not_claim_an_unverified_commit(self):
         config = main_experiment.OFFICIAL_IMPLEMENTATIONS["utigsp_unknown"]

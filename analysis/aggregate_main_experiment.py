@@ -82,7 +82,9 @@ DCDI_METHODS = {"dcdi_g_unknown", "dcdi_g_oracle"}
 STATISTICAL_METHODS = tuple(
     method for method in METHODS if method not in DCDI_METHODS
 )
-TARGET_MATRIX_METHODS = ("ps_mip_unknown", "utigsp_unknown")
+TARGET_MATRIX_METHODS = (
+    "ps_mip_unknown", "utigsp_unknown", "bacadi_unknown"
+)
 NUMERIC_COLUMNS = [
     "experiment_version", "p", "e", "replicate", "seed",
     "num_environments", "num_interventional_environments",
@@ -98,6 +100,7 @@ METHOD_LABELS = {
     "ps_mip_unknown": "PS-MIP",
     "dcdi_g_unknown": "DCDI-G",
     "utigsp_unknown": "UT-IGSP",
+    "bacadi_unknown": "BaCaDI",
     "gnies_unknown": "GnIES",
     "ps_mip_oracle": "PS-MIP (oracle)",
     "dcdi_g_oracle": "DCDI-G (oracle)",
@@ -108,6 +111,7 @@ STYLES = {
     "ps_mip_unknown": ("tab:blue", "o", "-"),
     "dcdi_g_unknown": ("tab:purple", "P", "-"),
     "utigsp_unknown": ("tab:red", "D", "-"),
+    "bacadi_unknown": ("tab:olive", "*", "-"),
     "gnies_unknown": ("tab:orange", "s", "-"),
     "ps_mip_oracle": ("tab:cyan", "^", "--"),
     "dcdi_g_oracle": ("tab:purple", "X", "--"),
@@ -734,32 +738,39 @@ def _target_classification_rows(results):
 
 
 def _common_target_rows(target_rows):
-    """Keep replicates containing every target setting for both methods."""
-    expected_pairs = {
-        (method, setting_id)
-        for method in TARGET_MATRIX_METHODS
-        for setting_id in method_setting_ids(method)
-    }
+    """Pair all available methods that have a complete path in each cell."""
     kept = []
     common_replicates = {}
     for (p, edge_multiplier), cell in target_rows.groupby(["p", "e"]):
-        available = {
-            int(replicate): set(zip(group["method"], group["setting_id"]))
-            for replicate, group in cell.groupby("replicate")
-        }
+        complete_by_method = {}
+        for method in TARGET_MATRIX_METHODS:
+            method_rows = cell[cell["method"] == method]
+            if method_rows.empty:
+                continue
+            required = set(method_setting_ids(method))
+            complete = {
+                int(replicate)
+                for replicate, group in method_rows.groupby("replicate")
+                if required.issubset(set(group["setting_id"]))
+            }
+            if complete:
+                complete_by_method[method] = complete
+        if not complete_by_method:
+            continue
         replicate_ids = tuple(
-            sorted(
-                replicate
-                for replicate, pairs in available.items()
-                if pairs == expected_pairs
-            )
+            sorted(set.intersection(*complete_by_method.values()))
         )
         if not replicate_ids:
             continue
-        kept.append(cell[cell["replicate"].isin(replicate_ids)])
+        kept.append(
+            cell[
+                cell["replicate"].isin(replicate_ids)
+                & cell["method"].isin(complete_by_method)
+            ]
+        )
         common_replicates[(int(p), int(edge_multiplier))] = replicate_ids
     if not kept:
-        return target_rows.copy(), common_replicates
+        return target_rows.iloc[0:0].copy(), common_replicates
     return pd.concat(kept, ignore_index=True), common_replicates
 
 
@@ -808,7 +819,7 @@ def _target_tpr_fpr_summary(
         & summary["optimal_rate"].lt(1.0)
     )
     summary["comparison_population"] = (
-        "common_replicates_across_methods_and_all_target_settings"
+        "common_replicates_across_available_complete_method_paths"
     )
     summary["_setting_order"] = [
         _setting_rank(method, setting)
