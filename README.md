@@ -405,10 +405,12 @@ script from the repository root:
 python3 analysis/plot_main_experiment_results.py
 ```
 
-It scans `experiment_results/main_experiment/parts/` automatically. If only
-UT-IGSP results exist, the plot contains only the UT-IGSP curve. As other
-method fragments appear, their curves are added automatically. The PNG and PDF
-are written to `experiment_results/main_experiment/summary/`.
+It scans `experiment_results/main_experiment/parts/` automatically. The graph
+plot contains every method with structural metrics. When PS-MIP and UT-IGSP
+both have a common set of replicates containing their complete tuning paths,
+the script also writes the environment-specific target TPR--FPR comparison.
+The PNG and PDF files are written to
+`experiment_results/main_experiment/summary/`.
 
 For strict final aggregation that requires every planned row, run:
 
@@ -421,12 +423,15 @@ python3 analysis/aggregate_main_experiment.py \
   --require-complete
 ```
 
-This writes `main_tdp_fdp.{png,pdf}`, `curve_summary.csv`, the raw
-best-setting selections, `best_dcpdag_summary.{csv,tex}`, and completeness/
-shared-data diagnostics. Aggregation also checks every fragment against the
-selected dataset manifest, so results from different generated suites cannot
-be mixed accidentally. Its `--require-complete` check stops before creating a
-final plot or table unless all 80 method/replicate fragments are complete.
+This writes `main_tdp_fdp.{png,pdf}`, `target_tpr_fpr.{png,pdf}`, their
+setting-level summaries, the raw best-setting selections,
+`best_dcpdag_summary.{csv,tex}`, and completeness/shared-data diagnostics. The
+target comparison uses only replicates containing every PS-MIP and UT-IGSP
+setting. Aggregation also checks every fragment against the selected dataset
+manifest, so results from different generated suites cannot be mixed
+accidentally. Its `--require-complete` check stops before creating a final
+graph plot or truth-selected table unless all 80 method/replicate fragments
+are complete.
 
 `--time-limit` covers Gurobi's solve and the external baseline fits. PS-MIP's
 screening and local-score precomputation happen before Gurobi and are included

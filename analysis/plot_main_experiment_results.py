@@ -16,7 +16,8 @@ from analysis.aggregate_main_experiment import DEFAULT_OUTPUT, main as aggregate
 
 def main() -> int:
     aggregate()
-    print(f"\nPlot ready: {DEFAULT_OUTPUT / 'main_tdp_fdp.png'}")
+    print(f"\nGraph plot ready: {DEFAULT_OUTPUT / 'main_tdp_fdp.png'}")
+    print(f"Target plot ready: {DEFAULT_OUTPUT / 'target_tpr_fpr.png'}")
     return 0
 
 

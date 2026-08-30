@@ -12,6 +12,7 @@ import numpy as np
 
 import DCDI
 import IGSP
+from analysis import aggregate_main_experiment
 from experiments import run_main_experiment
 from experiments import test_main_experiment_setup
 from analysis import plot_main_experiment_results
@@ -79,6 +80,45 @@ class PersistedStandaloneDataTests(unittest.TestCase):
         self.assertEqual(code, 0)
         aggregate.assert_called_once_with()
         self.assertIn("main_tdp_fdp.png", output.getvalue())
+        self.assertIn("target_tpr_fpr.png", output.getvalue())
+
+    def test_target_classification_uses_environment_node_decisions(self):
+        truth = np.zeros((5, 10), dtype=int)
+        truth[:, 0] = 1
+        estimated = truth.copy()
+        estimated[0, 0] = 0
+        estimated[0, 1] = 1
+        frame = aggregate_main_experiment.pd.DataFrame(
+            [
+                {
+                    "p": 10,
+                    "e": 1,
+                    "replicate": 1,
+                    "method": "ps_mip_unknown",
+                    "target_setting": "unknown",
+                    "setting_id": "bic_x1",
+                    "tuning_parameter": "tied_bic_multiplier",
+                    "tuning_value": 1.0,
+                    "graph_penalty": 0.01,
+                    "target_penalty": 0.01,
+                    "optimal": True,
+                    "status": "ok",
+                    "num_interventional_environments": 5,
+                    "estimated_targets": str(estimated.tolist()),
+                    "true_targets": str(truth.tolist()),
+                    "target_hamming": 2,
+                }
+            ]
+        )
+
+        result = aggregate_main_experiment._target_classification_rows(frame)
+
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result.iloc[0]["target_true_positives"], 4)
+        self.assertEqual(result.iloc[0]["target_false_positives"], 1)
+        self.assertEqual(result.iloc[0]["target_false_negatives"], 1)
+        self.assertAlmostEqual(result.iloc[0]["target_tpr"], 4 / 5)
+        self.assertAlmostEqual(result.iloc[0]["target_fpr"], 1 / 45)
 
 
 class NoSaveSetupCheckTests(unittest.TestCase):
