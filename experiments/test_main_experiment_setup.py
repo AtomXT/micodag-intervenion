@@ -88,7 +88,8 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Check the local main-experiment setup on p=10, e=1, replicate=1. "
-            "The hours-long BaCaDI fit is opt-in; results are printed and never saved."
+            "The one-hour-capped BaCaDI fit is opt-in; results are printed and "
+            "never saved."
         )
     )
     parser.add_argument(
@@ -133,7 +134,7 @@ def _parser() -> argparse.ArgumentParser:
         help=(
             "also run the official-repository-default BaCaDI configuration; this is "
             "disabled by "
-            "default because one fit can take hours"
+            "default because one fit can use the complete one-hour cap"
         ),
     )
     parser.add_argument(

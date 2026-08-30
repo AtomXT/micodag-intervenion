@@ -452,7 +452,7 @@ def main():
     parser.add_argument("--source-path", type=Path, default=DEFAULT_BACADI_PATH)
     parser.add_argument("--n-steps", type=int, default=DEFAULT_N_STEPS)
     parser.add_argument("--n-particles", type=int, default=DEFAULT_N_PARTICLES)
-    parser.add_argument("--time-limit", type=float, default=172800)
+    parser.add_argument("--time-limit", type=float, default=3600)
     parser.add_argument("--metric-time-limit", type=float, default=3600)
     args = parser.parse_args()
     if not np.isfinite([args.time_limit, args.metric_time_limit]).all() or min(

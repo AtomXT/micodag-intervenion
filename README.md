@@ -368,9 +368,10 @@ and can be changed with `--time-limit`. The setup check runs the six fast
 methods first, runs both DCDI modes last, and prints a one-minute heartbeat
 while DCDI is working. A method failure is printed, the
 remaining methods are still attempted, and the script exits nonzero.
-BaCaDI is excluded by default because one complete fit can take hours. The
-`--include-bacadi` flag is available for a deliberate Quest-side end-to-end
-check in an environment that contains both the BaCaDI and shared dependencies.
+BaCaDI is excluded by default because one complete fit can use the full
+one-hour cap. The `--include-bacadi` flag is available for a deliberate
+Quest-side end-to-end check in an environment that contains both the BaCaDI
+and shared dependencies.
 
 For a checkpointed `p=10, e=1` experiment smoke run, use the main driver. It
 loads the same persisted replicate with all 1000 observational and 200 rows in
@@ -428,18 +429,20 @@ unnecessarily coarse.
 | PS-MIP unknown | one replicate | 18 | `normal` | 24 hours | 16 GB |
 | DCDI-G unknown | one replicate | 30 | `normal` | 36 hours | 16 GB |
 | UT-IGSP unknown | one replicate | 30 | `short` | 1 hour | 16 GB |
-| BaCaDI unknown | one design cell | 1 | `normal` | 48 hours | 32 GB |
+| BaCaDI unknown | one design cell | 1 | `normal` | 3 hours | 32 GB |
 | GnIES unknown | one replicate | 30 | `normal` | 12 hours | 16 GB |
 | PS-MIP oracle | one replicate | 18 | `normal` | 24 hours | 16 GB |
 | DCDI-G oracle | one replicate | 18 | `normal` | 24 hours | 16 GB |
 | IGSP oracle | one replicate | 30 | `normal` | 12 hours | 16 GB |
 | GIES oracle | one replicate | 30 | `normal` | 12 hours | 16 GB |
 
-The eight existing arrays retain one-hour fit and exact-metric caps. The BaCaDI
-array uses a 46-hour fit cap within its 48-hour allocation and a one-hour metric
-cap. Every task requests eight CPUs. These requests are budgets rather than
-runtime claims, so the checkpoint files remain the recovery mechanism when an
-allocation ends before a cell is complete.
+Every array uses a one-hour cap for each fit and a separate one-hour cap for
+exact metric evaluation. The BaCaDI array requests three hours per one-fit task
+to leave time for environment validation, JAX compilation, data loading,
+metric evaluation, and checkpoint writing. Every task requests eight CPUs.
+These requests are budgets rather than runtime claims, so the checkpoint files
+remain the recovery mechanism when an allocation ends before a cell is
+complete.
 
 After cloning or pulling the repository on Quest, submit from the repository
 root. The committed `data/main_experiment/manifest.json` must already exist:

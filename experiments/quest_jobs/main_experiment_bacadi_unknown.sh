@@ -4,7 +4,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
-#SBATCH --time=48:00:00
+#SBATCH --time=03:00:00
 #SBATCH --mem=32G
 #SBATCH --array=0-59%10
 #SBATCH --job-name=bacadi_unknown
@@ -39,6 +39,6 @@ python3 experiments/run_main_experiment.py \
   --p-values "$p" \
   --edge-multipliers "$edge_multiplier" \
   --methods bacadi_unknown \
-  --time-limit 165600 \
+  --time-limit 3600 \
   --metric-time-limit 3600 \
   --output "experiment_results/main_experiment/parts/bacadi_unknown/p_${p}_e_${edge_multiplier}_replicate_$(printf '%03d' "$replicate").csv"

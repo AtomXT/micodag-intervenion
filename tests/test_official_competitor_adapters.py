@@ -586,7 +586,7 @@ class MainRunnerOfficialSourceTests(unittest.TestCase):
             "ps_mip_unknown": ("normal", "24:00:00"),
             "dcdi_g_unknown": ("normal", "36:00:00"),
             "utigsp_unknown": ("short", "01:00:00"),
-            "bacadi_unknown": ("normal", "48:00:00"),
+            "bacadi_unknown": ("normal", "03:00:00"),
             "gnies_unknown": ("normal", "12:00:00"),
             "ps_mip_oracle": ("normal", "24:00:00"),
             "dcdi_g_oracle": ("normal", "24:00:00"),
@@ -612,7 +612,7 @@ class MainRunnerOfficialSourceTests(unittest.TestCase):
                     self.assertIn("edge_multiplier=$((cell % 2 + 1))", script)
                     self.assertIn('--p-values "$p"', script)
                     self.assertIn('--edge-multipliers "$edge_multiplier"', script)
-                    self.assertIn("--time-limit 165600", script)
+                    self.assertIn("--time-limit 3600", script)
                     self.assertIn(
                         "parts/bacadi_unknown/p_${p}_e_${edge_multiplier}_replicate_",
                         script,
@@ -680,7 +680,7 @@ class MainRunnerOfficialSourceTests(unittest.TestCase):
         }
         args = SimpleNamespace(
             generator_numpy_version="2.0.2",
-            time_limit=165600,
+            time_limit=3600,
             metric_time_limit=3600,
             rscript="Rscript",
             official_runtime={"bacadi_unknown": validated_runtime},
