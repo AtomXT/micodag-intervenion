@@ -586,7 +586,7 @@ class MainRunnerOfficialSourceTests(unittest.TestCase):
             "ps_mip_unknown": ("normal", "24:00:00"),
             "dcdi_g_unknown": ("normal", "36:00:00"),
             "utigsp_unknown": ("short", "01:00:00"),
-            "bacadi_unknown": ("normal", "03:00:00"),
+            "bacadi_unknown": ("normal", "36:00:00"),
             "gnies_unknown": ("normal", "12:00:00"),
             "ps_mip_oracle": ("normal", "24:00:00"),
             "dcdi_g_oracle": ("normal", "24:00:00"),
@@ -603,25 +603,12 @@ class MainRunnerOfficialSourceTests(unittest.TestCase):
                 self.assertNotIn("--threads", script)
                 self.assertIn(f"--methods {method}", script)
                 if method == "bacadi_unknown":
-                    self.assertIn("#SBATCH --mem=32G", script)
-                    self.assertIn("#SBATCH --array=0-59%10", script)
                     self.assertIn("source activate bacadi39", script)
-                    self.assertIn("replicate=$((task / 6 + 1))", script)
-                    self.assertIn("cell=$((task % 6))", script)
-                    self.assertIn("p_index=$((cell / 2))", script)
-                    self.assertIn("edge_multiplier=$((cell % 2 + 1))", script)
-                    self.assertIn('--p-values "$p"', script)
-                    self.assertIn('--edge-multipliers "$edge_multiplier"', script)
-                    self.assertIn("--time-limit 3600", script)
-                    self.assertIn(
-                        "parts/bacadi_unknown/p_${p}_e_${edge_multiplier}_replicate_",
-                        script,
-                    )
-                else:
-                    self.assertIn("#SBATCH --mem=16G", script)
-                    self.assertIn("#SBATCH --array=1-10%10", script)
-                    self.assertIn("--time-limit 3600", script)
-                    self.assertIn(f"parts/{method}/replicate_", script)
+                    self.assertIn("export JAX_PLATFORM_NAME=cpu", script)
+                self.assertIn("#SBATCH --mem=16G", script)
+                self.assertIn("#SBATCH --array=1-10%10", script)
+                self.assertIn("--time-limit 3600", script)
+                self.assertIn(f"parts/{method}/replicate_", script)
                 if method.startswith("dcdi_g_"):
                     self.assertIn("module load R/4.4.0", script)
                 else:
