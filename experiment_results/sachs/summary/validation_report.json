@@ -20,135 +20,144 @@
       "full_setting": {
         "bic_multiplier": 0.0625,
         "graph_penalty": 9.272914114000162e-05,
-        "setting_id": "bic_x0p0625",
-        "target_penalty": 9.272914114000162e-05,
-        "tuning_parameter": "tied_graph_target_bic_multiplier",
+        "setting_id": "graph_x0p0625_target_x16",
+        "target_bic_multiplier": 16,
+        "target_penalty": 0.023738660131840415,
+        "tuning_parameter": "graph_bic_multiplier",
         "tuning_value": 0.0625
       },
       "method": "ps_mip_unknown",
-      "setting_id": "bic_x0p0625",
+      "setting_id": "graph_x0p0625_target_x16",
       "setting_index": 0,
-      "tuning_parameter": "tied_graph_target_bic_multiplier",
+      "tuning_parameter": "graph_bic_multiplier",
       "tuning_value": 0.0625
     },
     {
       "full_setting": {
         "bic_multiplier": 0.125,
         "graph_penalty": 0.00018545828228000324,
-        "setting_id": "bic_x0p125",
-        "target_penalty": 0.00018545828228000324,
-        "tuning_parameter": "tied_graph_target_bic_multiplier",
+        "setting_id": "graph_x0p125_target_x16",
+        "target_bic_multiplier": 16,
+        "target_penalty": 0.023738660131840415,
+        "tuning_parameter": "graph_bic_multiplier",
         "tuning_value": 0.125
       },
       "method": "ps_mip_unknown",
-      "setting_id": "bic_x0p125",
+      "setting_id": "graph_x0p125_target_x16",
       "setting_index": 1,
-      "tuning_parameter": "tied_graph_target_bic_multiplier",
+      "tuning_parameter": "graph_bic_multiplier",
       "tuning_value": 0.125
     },
     {
       "full_setting": {
         "bic_multiplier": 0.25,
         "graph_penalty": 0.0003709165645600065,
-        "setting_id": "bic_x0p25",
-        "target_penalty": 0.0003709165645600065,
-        "tuning_parameter": "tied_graph_target_bic_multiplier",
+        "setting_id": "graph_x0p25_target_x16",
+        "target_bic_multiplier": 16,
+        "target_penalty": 0.023738660131840415,
+        "tuning_parameter": "graph_bic_multiplier",
         "tuning_value": 0.25
       },
       "method": "ps_mip_unknown",
-      "setting_id": "bic_x0p25",
+      "setting_id": "graph_x0p25_target_x16",
       "setting_index": 2,
-      "tuning_parameter": "tied_graph_target_bic_multiplier",
+      "tuning_parameter": "graph_bic_multiplier",
       "tuning_value": 0.25
     },
     {
       "full_setting": {
         "bic_multiplier": 0.5,
         "graph_penalty": 0.000741833129120013,
-        "setting_id": "bic_x0p5",
-        "target_penalty": 0.000741833129120013,
-        "tuning_parameter": "tied_graph_target_bic_multiplier",
+        "setting_id": "graph_x0p5_target_x16",
+        "target_bic_multiplier": 16,
+        "target_penalty": 0.023738660131840415,
+        "tuning_parameter": "graph_bic_multiplier",
         "tuning_value": 0.5
       },
       "method": "ps_mip_unknown",
-      "setting_id": "bic_x0p5",
+      "setting_id": "graph_x0p5_target_x16",
       "setting_index": 3,
-      "tuning_parameter": "tied_graph_target_bic_multiplier",
+      "tuning_parameter": "graph_bic_multiplier",
       "tuning_value": 0.5
     },
     {
       "full_setting": {
         "bic_multiplier": 1,
         "graph_penalty": 0.001483666258240026,
-        "setting_id": "bic_x1",
-        "target_penalty": 0.001483666258240026,
-        "tuning_parameter": "tied_graph_target_bic_multiplier",
+        "setting_id": "graph_x1_target_x16",
+        "target_bic_multiplier": 16,
+        "target_penalty": 0.023738660131840415,
+        "tuning_parameter": "graph_bic_multiplier",
         "tuning_value": 1
       },
       "method": "ps_mip_unknown",
-      "setting_id": "bic_x1",
+      "setting_id": "graph_x1_target_x16",
       "setting_index": 4,
-      "tuning_parameter": "tied_graph_target_bic_multiplier",
+      "tuning_parameter": "graph_bic_multiplier",
       "tuning_value": 1.0
     },
     {
       "full_setting": {
         "bic_multiplier": 2,
         "graph_penalty": 0.002967332516480052,
-        "setting_id": "bic_x2",
-        "target_penalty": 0.002967332516480052,
-        "tuning_parameter": "tied_graph_target_bic_multiplier",
+        "setting_id": "graph_x2_target_x16",
+        "target_bic_multiplier": 16,
+        "target_penalty": 0.023738660131840415,
+        "tuning_parameter": "graph_bic_multiplier",
         "tuning_value": 2
       },
       "method": "ps_mip_unknown",
-      "setting_id": "bic_x2",
+      "setting_id": "graph_x2_target_x16",
       "setting_index": 5,
-      "tuning_parameter": "tied_graph_target_bic_multiplier",
+      "tuning_parameter": "graph_bic_multiplier",
       "tuning_value": 2.0
     },
     {
       "full_setting": {
         "bic_multiplier": 4,
         "graph_penalty": 0.005934665032960104,
-        "setting_id": "bic_x4",
-        "target_penalty": 0.005934665032960104,
-        "tuning_parameter": "tied_graph_target_bic_multiplier",
+        "setting_id": "graph_x4_target_x16",
+        "target_bic_multiplier": 16,
+        "target_penalty": 0.023738660131840415,
+        "tuning_parameter": "graph_bic_multiplier",
         "tuning_value": 4
       },
       "method": "ps_mip_unknown",
-      "setting_id": "bic_x4",
+      "setting_id": "graph_x4_target_x16",
       "setting_index": 6,
-      "tuning_parameter": "tied_graph_target_bic_multiplier",
+      "tuning_parameter": "graph_bic_multiplier",
       "tuning_value": 4.0
     },
     {
       "full_setting": {
         "bic_multiplier": 8,
         "graph_penalty": 0.011869330065920208,
-        "setting_id": "bic_x8",
-        "target_penalty": 0.011869330065920208,
-        "tuning_parameter": "tied_graph_target_bic_multiplier",
+        "setting_id": "graph_x8_target_x16",
+        "target_bic_multiplier": 16,
+        "target_penalty": 0.023738660131840415,
+        "tuning_parameter": "graph_bic_multiplier",
         "tuning_value": 8
       },
       "method": "ps_mip_unknown",
-      "setting_id": "bic_x8",
+      "setting_id": "graph_x8_target_x16",
       "setting_index": 7,
-      "tuning_parameter": "tied_graph_target_bic_multiplier",
+      "tuning_parameter": "graph_bic_multiplier",
       "tuning_value": 8.0
     },
     {
       "full_setting": {
         "bic_multiplier": 16,
         "graph_penalty": 0.023738660131840415,
-        "setting_id": "bic_x16",
+        "setting_id": "graph_x16_target_x16",
+        "target_bic_multiplier": 16,
         "target_penalty": 0.023738660131840415,
-        "tuning_parameter": "tied_graph_target_bic_multiplier",
+        "tuning_parameter": "graph_bic_multiplier",
         "tuning_value": 16
       },
       "method": "ps_mip_unknown",
-      "setting_id": "bic_x16",
+      "setting_id": "graph_x16_target_x16",
       "setting_index": 8,
-      "tuning_parameter": "tied_graph_target_bic_multiplier",
+      "tuning_parameter": "graph_bic_multiplier",
       "tuning_value": 16.0
     },
     {
@@ -791,7 +800,7 @@
       "tuning_value": 900.0
     }
   ],
-  "generated_at_utc": "2026-09-03T02:23:52+00:00",
+  "generated_at_utc": "2026-09-03T03:16:16+00:00",
   "graph_validation": {
     "consistent_extension_check": "enforced for every accepted row",
     "exact_i_cpdag_recomputation": "enforced for dag_and_i_cpdag rows using src.utils.interventional_cpdag",
