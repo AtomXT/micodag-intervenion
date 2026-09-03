@@ -575,8 +575,8 @@ def _write_completion_latex(summary, path):
         + "\\par\\smallskip\\footnotesize Completed means a row with finite "
         "accuracy metrics. Failed and missing fits are not assigned accuracy "
         "values. Median fit time uses completed rows only; fit and preflight "
-        "timeout columns are disjoint. DCDI is excluded from statistical "
-        "accuracy summaries and retained here as a computational outcome.\n"
+        "timeout columns are disjoint. DCDI and BaCaDI returned no finite "
+        "accuracy metrics and are retained here as computational outcomes.\n"
         "\\endgroup\n"
     )
 

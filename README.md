@@ -58,6 +58,11 @@ second-moment matrices and the chosen coefficient bounds.
 | `experiments/generate_main_experiment_data.py` | Standalone generator for all persisted main-experiment datasets |
 | `experiments/test_main_experiment_setup.py` | No-save, one-instance check of the eight shared-environment methods, with optional BaCaDI inclusion |
 | `experiments/run_main_experiment.py` | Main shared-data synthetic experiment driver |
+| `experiments/SACHS_ROC_PLAN.md` | Exact-data, Quest, and evaluation plan for the Sachs biological benchmark |
+| `experiments/prepare_sachs_data.py` | Checksum-pinned acquisition and validation of the six UT-IGSP Sachs files |
+| `experiments/run_sachs_roc.py` | One-setting Sachs fitter for three unknown-target methods, contextual UT-IGSP, and three oracle references |
+| `analysis/aggregate_sachs_roc.py` | Strict adjacency-based aggregation of Sachs directed and skeleton ROC points |
+| `analysis/plot_sachs_roc.py` | Paper-compatible count plots and conventional normalized Sachs ROC plots |
 | `analysis/plot_main_experiment_results.py` | Zero-argument plot of all currently available main-experiment results |
 | `analysis/aggregate_main_experiment.py` | Main graph and target recovery paths and best-`d_cpdag` potential tables |
 | `experiments/quest_jobs/main_experiment_<method>.sh` | Nine method-specific Slurm arrays, including the cell-wise BaCaDI array |
@@ -626,6 +631,16 @@ pipeline but remain available for provenance and reproduction. See
 `archive/README.md` before running an archived script; historical relative
 paths and dependencies are intentionally preserved rather than modernized.
 
+## Sachs biological benchmark
+
+The active real-data pipeline uses the exact six natural-log files, node
+ordering, five intervention contexts, and 18-edge accepted DAG released for
+the UT-IGSP Sachs analysis.  It does not reuse the archived all-condition
+dataset or its mislabeled false-positive-discovery plot.  See
+[`experiments/SACHS_ROC_PLAN.md`](experiments/SACHS_ROC_PLAN.md) for the pinned
+source, the 5,846-row split, fixed method paths, Quest commands, and the strict
+post-run plot contract.
+
 ## Data generators
 
 `data/DataGeneration.py` is the low-level sampling library and legacy-layout
@@ -672,7 +687,6 @@ should focus on:
 - validating `MIP.py` through small cases with known optima;
 - validating the redesigned main experiment at cluster scale;
 - running the Quest-only BaCaDI array before reporting its comparison;
-- adding Sachs-data preprocessing and evaluation;
 - validating the tuning paths and post-hoc potential summaries at scale; and
 - validating the archived provenance bundle only when an older result must be
   reproduced.

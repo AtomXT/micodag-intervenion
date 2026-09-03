@@ -116,16 +116,36 @@ def _target_matrix(target_sets, environments, p):
     return targets
 
 
+def _known_intervention_sets(known_interventions, environments, p):
+    """Validate optional intended targets supplied to unknown-target IGSP.
+
+    A one in this matrix declares an intervention that is known to occur.  A
+    zero does not declare the variable to be non-targeted: UT-IGSP remains free
+    to learn additional, unintended targets in every environment.
+    """
+    if known_interventions is None:
+        return [set() for _ in range(environments)]
+    values = np.asarray(known_interventions)
+    expected = (environments, p)
+    if values.shape != expected or not np.isin(values, (0, 1)).all():
+        raise ValueError(
+            f"known_interventions must be binary with shape {expected}; "
+            "do not include an observational row"
+        )
+    return [set(np.flatnonzero(row)) for row in values]
+
+
 def fit(
     data,
     *,
+    known_interventions=None,
     alpha=1e-5,
     alpha_inv=None,
     depth=4,
     nruns=10,
     seed=0,
 ):
-    """Fit UT-IGSP with all intervention targets treated as unknown.
+    """Fit UT-IGSP with optional known intended intervention targets.
 
     Parameters
     ----------
@@ -133,6 +153,10 @@ def fit(
         Sample matrices in environment order. ``data[0]`` is observational;
         every remaining matrix is one interventional environment. Matrices
         must use the same variable order.
+    known_interventions:
+        Optional binary ``K``-by-``p`` matrix of targets known to be present,
+        with no observational row.  Omit it to run UT-IGSP* with all targets
+        unknown.  Zeros remain unknown rather than asserting non-target status.
     alpha:
         Significance level for observational conditional-independence tests.
     alpha_inv:
@@ -154,6 +178,9 @@ def fit(
     """
     arrays = _validate_data(data)
     p = arrays[0].shape[1]
+    known_sets = _known_intervention_sets(
+        known_interventions, len(arrays) - 1, p
+    )
     alpha = float(alpha)
     alpha_inv = alpha if alpha_inv is None else float(alpha_inv)
     if not 0 < alpha < 1 or not 0 < alpha_inv < 1:
@@ -186,7 +213,7 @@ def fit(
     invariance_tester = MemoizedInvarianceTester(
         gauss_invariance_test, invariance_suffstat, alpha=alpha_inv
     )
-    settings = [dict(known_interventions=set()) for _ in interventions]
+    settings = [dict(known_interventions=targets) for targets in known_sets]
 
     python_state = random.getstate()
     numpy_state = np.random.get_state()
@@ -213,6 +240,12 @@ def fit(
     adjacency = (adjacency != 0).astype(int)
     np.fill_diagonal(adjacency, 0)
     targets = _target_matrix(estimated_target_sets, len(interventions), p)
+    # causaldag reports targets discovered by its invariance tests and may omit
+    # the known-present seeds from that return value.  Preserve the adapter's
+    # contract by explicitly taking their union.
+    for environment, known_targets in enumerate(known_sets):
+        if known_targets:
+            targets[environment, list(known_targets)] = 1
     return adjacency, targets
 
 

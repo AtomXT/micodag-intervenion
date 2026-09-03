@@ -1,15 +1,16 @@
-input files: 80
+input files: 90
 expected rows: 2100
-observed version-10 rows: 1988
-expected-key rows: 1988
+observed version-10 rows: 2048
+expected-key rows: 2048
 successful metric rows: 1426
-missing rows: 112
+missing rows: 52
 unexpected rows: 0
-unsuccessful rows: 562
+unsuccessful rows: 622
 incomplete method/replicate grids: 217
 
 status counts:
 method          status       
+bacadi_unknown  fit_error         60
 dcdi_g_oracle   fit_error        180
 dcdi_g_unknown  fit_error        300
 gies_oracle     ok               300

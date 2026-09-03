@@ -17,6 +17,10 @@ experiment_results/main_experiment/summary/best_dcpdag_selected_rows.csv
 data/.main_experiment.generation.lock
 data/.main_experiment.staging-*/
 data/.main_experiment.backup-*/
+data/sachs/
+data/.sachs.preparation.lock
+data/.sachs.staging-*/
+data/.sachs.backup-*/
 archive/local/
 archive/legacy_pipeline/experiment_results/dcdi_manual/
 archive/legacy_pipeline/experiment_results/tdp_fdp_dcdi/work/
