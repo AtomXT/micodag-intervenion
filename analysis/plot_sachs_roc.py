@@ -338,7 +338,8 @@ def plot_roc_points(
         ax.set_title(title)
         ax.set_xlabel(f"False positives (of {negatives})")
         ax.set_ylabel(f"True positives (of {positives})")
-        ax.set_xlim(-0.025 * negatives, 1.025 * negatives)
+        x_max = 45 if title == "Directed edges" else negatives
+        ax.set_xlim(-0.025 * x_max, 1.025 * x_max)
         ax.set_ylim(-0.04 * positives, 1.04 * positives)
         ax.xaxis.set_major_locator(MaxNLocator(integer=True, nbins=6))
         ax.yaxis.set_major_locator(MaxNLocator(integer=True, nbins=6))
