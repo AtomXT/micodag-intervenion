@@ -3,16 +3,16 @@
   "allow_incomplete": false,
   "counts": {
     "accepted_nonoptimal_rows": 0,
-    "accepted_rows": 54,
+    "accepted_rows": 63,
     "conflicting_duplicate_keys": 0,
-    "expected_rows": 54,
+    "expected_rows": 63,
     "identical_duplicate_rows_dropped": 0,
     "ignored_unselected_method_rows": 0,
-    "input_files": 54,
+    "input_files": 63,
     "malformed_rows": 0,
     "missing_rows": 0,
     "non_ok_rows": 0,
-    "raw_rows": 54,
+    "raw_rows": 63,
     "unexpected_rows": 0
   },
   "expected_settings": [
@@ -355,6 +355,150 @@
       "setting_index": 5,
       "tuning_parameter": "author_multiplier_times_log_n",
       "tuning_value": 2.0
+    },
+    {
+      "full_setting": {
+        "bic_multiplier": 0.0625,
+        "graph_penalty": 9.272914114000162e-05,
+        "setting_id": "graph_x0p0625_target_x16",
+        "target_bic_multiplier": 16,
+        "target_penalty": 0.023738660131840415,
+        "tuning_parameter": "graph_bic_multiplier",
+        "tuning_value": 0.0625
+      },
+      "method": "ps_mip_intended",
+      "setting_id": "graph_x0p0625_target_x16",
+      "setting_index": 0,
+      "tuning_parameter": "graph_bic_multiplier",
+      "tuning_value": 0.0625
+    },
+    {
+      "full_setting": {
+        "bic_multiplier": 0.125,
+        "graph_penalty": 0.00018545828228000324,
+        "setting_id": "graph_x0p125_target_x16",
+        "target_bic_multiplier": 16,
+        "target_penalty": 0.023738660131840415,
+        "tuning_parameter": "graph_bic_multiplier",
+        "tuning_value": 0.125
+      },
+      "method": "ps_mip_intended",
+      "setting_id": "graph_x0p125_target_x16",
+      "setting_index": 1,
+      "tuning_parameter": "graph_bic_multiplier",
+      "tuning_value": 0.125
+    },
+    {
+      "full_setting": {
+        "bic_multiplier": 0.25,
+        "graph_penalty": 0.0003709165645600065,
+        "setting_id": "graph_x0p25_target_x16",
+        "target_bic_multiplier": 16,
+        "target_penalty": 0.023738660131840415,
+        "tuning_parameter": "graph_bic_multiplier",
+        "tuning_value": 0.25
+      },
+      "method": "ps_mip_intended",
+      "setting_id": "graph_x0p25_target_x16",
+      "setting_index": 2,
+      "tuning_parameter": "graph_bic_multiplier",
+      "tuning_value": 0.25
+    },
+    {
+      "full_setting": {
+        "bic_multiplier": 0.5,
+        "graph_penalty": 0.000741833129120013,
+        "setting_id": "graph_x0p5_target_x16",
+        "target_bic_multiplier": 16,
+        "target_penalty": 0.023738660131840415,
+        "tuning_parameter": "graph_bic_multiplier",
+        "tuning_value": 0.5
+      },
+      "method": "ps_mip_intended",
+      "setting_id": "graph_x0p5_target_x16",
+      "setting_index": 3,
+      "tuning_parameter": "graph_bic_multiplier",
+      "tuning_value": 0.5
+    },
+    {
+      "full_setting": {
+        "bic_multiplier": 1,
+        "graph_penalty": 0.001483666258240026,
+        "setting_id": "graph_x1_target_x16",
+        "target_bic_multiplier": 16,
+        "target_penalty": 0.023738660131840415,
+        "tuning_parameter": "graph_bic_multiplier",
+        "tuning_value": 1
+      },
+      "method": "ps_mip_intended",
+      "setting_id": "graph_x1_target_x16",
+      "setting_index": 4,
+      "tuning_parameter": "graph_bic_multiplier",
+      "tuning_value": 1.0
+    },
+    {
+      "full_setting": {
+        "bic_multiplier": 2,
+        "graph_penalty": 0.002967332516480052,
+        "setting_id": "graph_x2_target_x16",
+        "target_bic_multiplier": 16,
+        "target_penalty": 0.023738660131840415,
+        "tuning_parameter": "graph_bic_multiplier",
+        "tuning_value": 2
+      },
+      "method": "ps_mip_intended",
+      "setting_id": "graph_x2_target_x16",
+      "setting_index": 5,
+      "tuning_parameter": "graph_bic_multiplier",
+      "tuning_value": 2.0
+    },
+    {
+      "full_setting": {
+        "bic_multiplier": 4,
+        "graph_penalty": 0.005934665032960104,
+        "setting_id": "graph_x4_target_x16",
+        "target_bic_multiplier": 16,
+        "target_penalty": 0.023738660131840415,
+        "tuning_parameter": "graph_bic_multiplier",
+        "tuning_value": 4
+      },
+      "method": "ps_mip_intended",
+      "setting_id": "graph_x4_target_x16",
+      "setting_index": 6,
+      "tuning_parameter": "graph_bic_multiplier",
+      "tuning_value": 4.0
+    },
+    {
+      "full_setting": {
+        "bic_multiplier": 8,
+        "graph_penalty": 0.011869330065920208,
+        "setting_id": "graph_x8_target_x16",
+        "target_bic_multiplier": 16,
+        "target_penalty": 0.023738660131840415,
+        "tuning_parameter": "graph_bic_multiplier",
+        "tuning_value": 8
+      },
+      "method": "ps_mip_intended",
+      "setting_id": "graph_x8_target_x16",
+      "setting_index": 7,
+      "tuning_parameter": "graph_bic_multiplier",
+      "tuning_value": 8.0
+    },
+    {
+      "full_setting": {
+        "bic_multiplier": 16,
+        "graph_penalty": 0.023738660131840415,
+        "setting_id": "graph_x16_target_x16",
+        "target_bic_multiplier": 16,
+        "target_penalty": 0.023738660131840415,
+        "tuning_parameter": "graph_bic_multiplier",
+        "tuning_value": 16
+      },
+      "method": "ps_mip_intended",
+      "setting_id": "graph_x16_target_x16",
+      "setting_index": 8,
+      "tuning_parameter": "graph_bic_multiplier",
+      "tuning_value": 16.0
     },
     {
       "full_setting": {
@@ -800,7 +944,7 @@
       "tuning_value": 900.0
     }
   ],
-  "generated_at_utc": "2026-09-03T03:16:16+00:00",
+  "generated_at_utc": "2026-09-03T03:46:35+00:00",
   "graph_validation": {
     "consistent_extension_check": "enforced for every accepted row",
     "exact_i_cpdag_recomputation": "enforced for dag_and_i_cpdag rows using src.utils.interventional_cpdag",
@@ -809,6 +953,7 @@
       "gies_oracle": "i_cpdag_and_deterministic_consistent_extension",
       "gnies_unknown": "i_cpdag_and_deterministic_consistent_extension",
       "igsp_oracle": "dag_and_i_cpdag",
+      "ps_mip_intended": "dag_and_i_cpdag",
       "ps_mip_oracle": "dag_and_i_cpdag",
       "ps_mip_unknown": "dag_and_i_cpdag",
       "utigsp_intended": "dag_and_i_cpdag",
@@ -836,6 +981,15 @@
     "/gpfs/projects/p32811/micodag-intervenion/experiment_results/sachs/parts/igsp_oracle/setting_06.csv",
     "/gpfs/projects/p32811/micodag-intervenion/experiment_results/sachs/parts/igsp_oracle/setting_07.csv",
     "/gpfs/projects/p32811/micodag-intervenion/experiment_results/sachs/parts/igsp_oracle/setting_08.csv",
+    "/gpfs/projects/p32811/micodag-intervenion/experiment_results/sachs/parts/ps_mip_intended/setting_01.csv",
+    "/gpfs/projects/p32811/micodag-intervenion/experiment_results/sachs/parts/ps_mip_intended/setting_02.csv",
+    "/gpfs/projects/p32811/micodag-intervenion/experiment_results/sachs/parts/ps_mip_intended/setting_03.csv",
+    "/gpfs/projects/p32811/micodag-intervenion/experiment_results/sachs/parts/ps_mip_intended/setting_04.csv",
+    "/gpfs/projects/p32811/micodag-intervenion/experiment_results/sachs/parts/ps_mip_intended/setting_05.csv",
+    "/gpfs/projects/p32811/micodag-intervenion/experiment_results/sachs/parts/ps_mip_intended/setting_06.csv",
+    "/gpfs/projects/p32811/micodag-intervenion/experiment_results/sachs/parts/ps_mip_intended/setting_07.csv",
+    "/gpfs/projects/p32811/micodag-intervenion/experiment_results/sachs/parts/ps_mip_intended/setting_08.csv",
+    "/gpfs/projects/p32811/micodag-intervenion/experiment_results/sachs/parts/ps_mip_intended/setting_09.csv",
     "/gpfs/projects/p32811/micodag-intervenion/experiment_results/sachs/parts/ps_mip_oracle/setting_01.csv",
     "/gpfs/projects/p32811/micodag-intervenion/experiment_results/sachs/parts/ps_mip_oracle/setting_02.csv",
     "/gpfs/projects/p32811/micodag-intervenion/experiment_results/sachs/parts/ps_mip_oracle/setting_03.csv",
@@ -890,6 +1044,9 @@
         20260901
       ],
       "igsp_oracle": [
+        20260901
+      ],
+      "ps_mip_intended": [
         20260901
       ],
       "ps_mip_oracle": [
@@ -968,6 +1125,7 @@
     "ps_mip_unknown",
     "utigsp_unknown",
     "gnies_unknown",
+    "ps_mip_intended",
     "utigsp_intended",
     "ps_mip_oracle",
     "igsp_oracle",
@@ -978,6 +1136,7 @@
     "context_specific_methods": [
       "gies_oracle",
       "igsp_oracle",
+      "ps_mip_intended",
       "ps_mip_oracle",
       "ps_mip_unknown",
       "utigsp_intended",
@@ -991,12 +1150,16 @@
     "gnies_unknown_shape": [
       11
     ],
+    "known_present_methods": [
+      "ps_mip_intended",
+      "utigsp_intended"
+    ],
+    "known_present_semantics": "every supplied intended target must remain present; learned off-targets are allowed",
     "oracle_methods_must_equal_intended_targets": [
       "gies_oracle",
       "igsp_oracle",
       "ps_mip_oracle"
-    ],
-    "utigsp_intended_semantics": "every supplied intended target must remain present; learned off-targets are allowed"
+    ]
   },
   "truth_universe": {
     "directed_negatives": 92,
