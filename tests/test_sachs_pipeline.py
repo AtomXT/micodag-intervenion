@@ -94,9 +94,10 @@ class SachsRunnerTests(unittest.TestCase):
         data = _dummy_sachs_data()
         self.assertEqual(
             [len(run_sachs_roc.method_settings(method, data)) for method in run_sachs_roc.METHODS],
-            [9, 8, 6, 8, 9, 8, 6],
+            [9, 8, 6, 9, 8, 9, 8, 6],
         )
         ps_unknown = run_sachs_roc.method_settings("ps_mip_unknown", data)
+        ps_intended = run_sachs_roc.method_settings("ps_mip_intended", data)
         ps_base = np.log(5846) / 5846
         np.testing.assert_allclose(
             [setting["graph_penalty"] for setting in ps_unknown],
@@ -112,6 +113,11 @@ class SachsRunnerTests(unittest.TestCase):
         )
         self.assertTrue(
             all(setting["setting_id"].endswith("_target_x16") for setting in ps_unknown)
+        )
+        self.assertEqual(ps_intended, ps_unknown)
+        self.assertEqual(
+            run_sachs_roc.target_knowledge("ps_mip_intended"),
+            "intended_targets_known_present",
         )
         self.assertEqual(
             [
@@ -190,7 +196,7 @@ class SachsRunnerTests(unittest.TestCase):
                 data,
                 None,
                 setting,
-                oracle=False,
+                target_knowledge="unknown",
                 seed=17,
                 threads=1,
                 time_limit=10,
@@ -207,13 +213,87 @@ class SachsRunnerTests(unittest.TestCase):
         with mock.patch.object(run_sachs_roc, "_run_ps_mip", return_value={}) as fit:
             run_sachs_roc._run_method("ps_mip_unknown", data, targets, setting, args)
         self.assertIsNone(fit.call_args.args[1])
-        self.assertFalse(fit.call_args.kwargs["oracle"])
+        self.assertEqual(fit.call_args.kwargs["target_knowledge"], "unknown")
 
         args.method = "utigsp_unknown"
         setting = run_sachs_roc.method_settings("utigsp_unknown", data)[0]
         with mock.patch.object(run_sachs_roc, "_run_utigsp", return_value={}) as fit:
             run_sachs_roc._run_method("utigsp_unknown", data, targets, setting, args)
         self.assertIsNone(fit.call_args.kwargs["known_interventions"])
+
+    def test_ps_mip_passes_the_partial_target_status_to_the_optimizer(self):
+        observational = np.vstack([np.zeros(11), np.ones(11)])
+        data = [observational.copy() for _ in range(6)]
+        intended = sachs_data.intended_target_matrix()
+        target_status = run_sachs_roc._known_present_target_status(intended)
+        returned_targets = intended.copy()
+        returned_targets[0, 0] = 1
+        metadata = {
+            "objective_bound": 1.0,
+            "solver_status": "OPTIMAL",
+            "solver_status_code": 2,
+            "optimal": True,
+            "solution_count": 1,
+            "node_count": 0,
+        }
+        fake_gurobi = SimpleNamespace(setParam=mock.Mock())
+        fake_mip = SimpleNamespace(
+            optimization=mock.Mock(
+                return_value=(
+                    np.eye(11),
+                    returned_targets,
+                    0.0,
+                    1.0,
+                    0.01,
+                    metadata,
+                )
+            )
+        )
+        setting = {"graph_penalty": 0.1, "target_penalty": 0.1}
+        with (
+            mock.patch.dict(
+                sys.modules,
+                {"gurobipy": fake_gurobi, "MIP_profiled": fake_mip},
+            ),
+            mock.patch(
+                "src.utils.interventional_cpdag", side_effect=lambda dag, _targets: dag
+            ),
+        ):
+            result = run_sachs_roc._run_ps_mip(
+                data,
+                target_status,
+                setting,
+                target_knowledge="intended_targets_known_present",
+                seed=17,
+                threads=1,
+                time_limit=10,
+            )
+
+        np.testing.assert_array_equal(
+            fake_mip.optimization.call_args.kwargs["target_status"], target_status
+        )
+        np.testing.assert_array_equal(result["estimated_targets"], returned_targets)
+
+    def test_intended_ps_mip_fixes_ones_and_leaves_everything_else_unknown(self):
+        data = _dummy_sachs_data()
+        intended = sachs_data.intended_target_matrix()
+        expected_status = np.where(intended == 1, 1, -1)
+        np.testing.assert_array_equal(
+            run_sachs_roc._known_present_target_status(intended),
+            expected_status,
+        )
+
+        args = _runner_args("ps_mip_intended", 0, "/tmp/unused.csv")
+        setting = run_sachs_roc.method_settings("ps_mip_intended", data)[0]
+        with mock.patch.object(run_sachs_roc, "_run_ps_mip", return_value={}) as fit:
+            run_sachs_roc._run_method(
+                "ps_mip_intended", data, intended, setting, args
+            )
+        np.testing.assert_array_equal(fit.call_args.args[1], expected_status)
+        self.assertEqual(
+            fit.call_args.kwargs["target_knowledge"],
+            "intended_targets_known_present",
+        )
 
     def test_intended_utigsp_receives_only_the_declared_known_present_mask(self):
         data = _dummy_sachs_data()
@@ -435,6 +515,12 @@ class SachsAggregationAndPlotTests(unittest.TestCase):
             intended,
         )
         np.testing.assert_array_equal(parsed, learned_with_off_target)
+        parsed, _canonical = aggregate_sachs_roc._parse_estimated_targets(
+            json.dumps(learned_with_off_target.tolist()),
+            "ps_mip_intended",
+            intended,
+        )
+        np.testing.assert_array_equal(parsed, learned_with_off_target)
 
         missing_known = intended.copy()
         missing_known[0, 6] = 0
@@ -442,6 +528,12 @@ class SachsAggregationAndPlotTests(unittest.TestCase):
             aggregate_sachs_roc._parse_estimated_targets(
                 json.dumps(missing_known.tolist()),
                 "utigsp_intended",
+                intended,
+            )
+        with self.assertRaisesRegex(ValueError, "known-present"):
+            aggregate_sachs_roc._parse_estimated_targets(
+                json.dumps(missing_known.tolist()),
+                "ps_mip_intended",
                 intended,
             )
         with self.assertRaisesRegex(ValueError, "must equal"):

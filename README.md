@@ -60,7 +60,7 @@ second-moment matrices and the chosen coefficient bounds.
 | `experiments/run_main_experiment.py` | Main shared-data synthetic experiment driver |
 | `experiments/SACHS_ROC_PLAN.md` | Exact-data, Quest, and evaluation plan for the Sachs biological benchmark |
 | `experiments/prepare_sachs_data.py` | Checksum-pinned acquisition and validation of the six UT-IGSP Sachs files |
-| `experiments/run_sachs_roc.py` | One-setting Sachs fitter for three unknown-target methods, contextual UT-IGSP, and three oracle references |
+| `experiments/run_sachs_roc.py` | One-setting Sachs fitter for unknown-, intended-present-, and exact-oracle target conditions |
 | `analysis/aggregate_sachs_roc.py` | Strict adjacency-based aggregation of Sachs directed and skeleton ROC points |
 | `analysis/plot_sachs_roc.py` | Paper-compatible count plots and conventional normalized Sachs ROC plots |
 | `analysis/plot_main_experiment_results.py` | Zero-argument plot of all currently available main-experiment results |
@@ -636,7 +636,9 @@ paths and dependencies are intentionally preserved rather than modernized.
 The active real-data pipeline uses the exact six natural-log files, node
 ordering, five intervention contexts, and 18-edge accepted DAG released for
 the UT-IGSP Sachs analysis.  It does not reuse the archived all-condition
-dataset or its mislabeled false-positive-discovery plot.  See
+dataset or its mislabeled false-positive-discovery plot. Its contextual
+conditions include both UT-IGSP and PS-MIP with each intended target fixed
+present while additional off-targets remain learnable. See
 [`experiments/SACHS_ROC_PLAN.md`](experiments/SACHS_ROC_PLAN.md) for the pinned
 source, the 5,846-row split, fixed method paths, Quest commands, and the strict
 post-run plot contract.

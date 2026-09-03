@@ -54,6 +54,7 @@ METHODS = (
     "ps_mip_unknown",
     "utigsp_unknown",
     "gnies_unknown",
+    "ps_mip_intended",
     "utigsp_intended",
     "ps_mip_oracle",
     "igsp_oracle",
@@ -63,14 +64,19 @@ METHOD_LABELS = {
     "ps_mip_unknown": "PS-MIP (unknown targets)",
     "utigsp_unknown": "UT-IGSP* (unknown targets)",
     "gnies_unknown": "GnIES (unknown targets)",
+    "ps_mip_intended": "PS-MIP (intended targets present)",
     "utigsp_intended": "UT-IGSP (intended targets supplied)",
     "ps_mip_oracle": "PS-MIP (intended-target oracle)",
     "igsp_oracle": "IGSP (intended-target oracle)",
     "gies_oracle": "GIES (intended-target oracle)",
 }
 ORACLE_METHODS = {"ps_mip_oracle", "igsp_oracle", "gies_oracle"}
+KNOWN_PRESENT_METHODS = {"ps_mip_intended", "utigsp_intended"}
 METHOD_PREPROCESSING = {
     "ps_mip_unknown": (
+        "within_environment_centering_then_observational_population_sd_scaling"
+    ),
+    "ps_mip_intended": (
         "within_environment_centering_then_observational_population_sd_scaling"
     ),
     "ps_mip_oracle": (
@@ -84,6 +90,7 @@ METHOD_PREPROCESSING = {
 }
 METHOD_IMPLEMENTATION_FILES = {
     "ps_mip_unknown": ("MIP.py", "MIP_profiled.py", "src/utils.py"),
+    "ps_mip_intended": ("MIP.py", "MIP_profiled.py", "src/utils.py"),
     "ps_mip_oracle": ("MIP.py", "MIP_profiled.py", "src/utils.py"),
     "utigsp_unknown": ("UTIGSP.py", "src/utils.py"),
     "utigsp_intended": ("UTIGSP.py", "src/utils.py"),
@@ -94,8 +101,8 @@ METHOD_IMPLEMENTATION_FILES = {
 
 # The PS-MIP graph path is deliberately wider than the three-point synthetic
 # path: this is one fixed dataset and the goal is an ROC-style regularization
-# path.  The unknown-target path holds its target penalty fixed so graph
-# sparsity is the only quantity swept along the curve.
+# path.  The unknown and intended-present paths hold their target penalty
+# fixed so graph sparsity is the only quantity swept along each curve.
 PS_BIC_MULTIPLIERS = (1 / 16, 1 / 8, 1 / 4, 1 / 2, 1, 2, 4, 8, 16)
 PS_TARGET_BIC_MULTIPLIER = 16
 
@@ -207,12 +214,23 @@ def _total_samples(data: Iterable[np.ndarray]) -> int:
     return int(sum(len(values) for values in data))
 
 
+def target_knowledge(method: str) -> str:
+    """Return the declared target-information contract for one method."""
+    if method not in METHODS:
+        raise ValueError(f"unknown Sachs method {method!r}")
+    if method in ORACLE_METHODS:
+        return "intended_targets_oracle"
+    if method in KNOWN_PRESENT_METHODS:
+        return "intended_targets_known_present"
+    return "unknown"
+
+
 def method_settings(method: str, data: Iterable[np.ndarray]) -> list[dict[str, Any]]:
     """Return the ordered, predeclared path for one Sachs method."""
     if method not in METHODS:
         raise ValueError(f"unknown Sachs method {method!r}")
     total = _total_samples(data)
-    if method == "ps_mip_unknown":
+    if method in {"ps_mip_unknown", "ps_mip_intended"}:
         base = log(total) / total
         return [
             {
@@ -481,12 +499,20 @@ def _complete_superstructure(p: int) -> np.ndarray:
     return moral
 
 
+def _known_present_target_status(intended_targets: np.ndarray) -> np.ndarray:
+    """Fix intended targets present and leave all other indicators unknown."""
+    targets = np.asarray(intended_targets)
+    if targets.ndim != 2 or not np.isin(targets, (0, 1)).all():
+        raise ValueError("intended targets must be a binary context-by-node matrix")
+    return np.where(targets == 1, 1, -1).astype(int)
+
+
 def _run_ps_mip(
     data: list[np.ndarray],
-    intended_targets: np.ndarray | None,
+    target_status: np.ndarray | None,
     setting: dict[str, Any],
     *,
-    oracle: bool,
+    target_knowledge: str,
     seed: int,
     threads: int,
     time_limit: float,
@@ -504,16 +530,34 @@ def _run_ps_mip(
     transformed = _ps_data(data)
     moral = _complete_superstructure(transformed[0].shape[1])
     started = time.perf_counter()
-    if oracle and intended_targets is None:
-        raise ValueError("oracle PS-MIP requires intended targets")
-    if not oracle and intended_targets is not None:
-        raise ValueError("unknown-target PS-MIP must not receive intended targets")
+    expected_shape = (len(data) - 1, transformed[0].shape[1])
+    if target_knowledge == "unknown":
+        if target_status is not None:
+            raise ValueError("unknown-target PS-MIP must not receive target status")
+    elif target_knowledge == "intended_targets_known_present":
+        status = np.asarray(target_status)
+        if status.shape != expected_shape or not np.isin(status, (-1, 1)).all():
+            raise ValueError(
+                "known-present PS-MIP target status must contain only -1 and 1 "
+                f"with shape {expected_shape}"
+            )
+        target_status = status.astype(int)
+    elif target_knowledge == "intended_targets_oracle":
+        status = np.asarray(target_status)
+        if status.shape != expected_shape or not np.isin(status, (0, 1)).all():
+            raise ValueError(
+                "oracle PS-MIP target status must be binary with shape "
+                f"{expected_shape}"
+            )
+        target_status = status.astype(int)
+    else:
+        raise ValueError(f"unknown PS-MIP target knowledge {target_knowledge!r}")
     result = optimization(
         transformed,
         moral,
         setting["graph_penalty"],
         l_delta=setting["target_penalty"],
-        target_status=intended_targets,
+        target_status=target_status,
         max_parents=None,
         configuration_limit=CONFIGURATION_LIMIT,
         time_limit=time_limit,
@@ -704,13 +748,14 @@ def _run_method(
     args: argparse.Namespace,
 ) -> dict[str, Any]:
     # Unknown-target branches receive no accepted graph or intended-target
-    # matrix.  Truth crosses the method boundary only in named oracle methods.
+    # matrix. Intended-target information crosses the method boundary only in
+    # the explicitly named known-present and oracle conditions.
     if method == "ps_mip_unknown":
         return _run_ps_mip(
             data,
             None,
             setting,
-            oracle=False,
+            target_knowledge="unknown",
             seed=args.seed,
             threads=args.threads,
             time_limit=args.time_limit,
@@ -725,6 +770,16 @@ def _run_method(
         )
     if method == "gnies_unknown":
         return _run_gnies(data, setting, time_limit=args.time_limit)
+    if method == "ps_mip_intended":
+        return _run_ps_mip(
+            data,
+            _known_present_target_status(intended_targets),
+            setting,
+            target_knowledge="intended_targets_known_present",
+            seed=args.seed,
+            threads=args.threads,
+            time_limit=args.time_limit,
+        )
     if method == "utigsp_intended":
         return _run_utigsp(
             data,
@@ -738,7 +793,7 @@ def _run_method(
             data,
             intended_targets,
             setting,
-            oracle=True,
+            target_knowledge="intended_targets_oracle",
             seed=args.seed,
             threads=args.threads,
             time_limit=args.time_limit,
@@ -774,6 +829,7 @@ def _base_row(
         "threads": args.threads,
         "seed_usage": _seed_usage(args.method),
         "data_preprocessing": METHOD_PREPROCESSING[args.method],
+        "target_knowledge": target_knowledge(args.method),
         "roc_basis": "returned_or_deterministic_representative_dag",
         "utigsp_protocol_note": (
             "modern Gaussian-invariance adapter with alpha_inv=1e-20; the public "
@@ -791,13 +847,7 @@ def _base_row(
         "setting_id": setting["setting_id"],
         "tuning_parameter": setting["tuning_parameter"],
         "tuning_value": setting["tuning_value"],
-        "target_knowledge": (
-            "intended_targets_oracle"
-            if args.method in ORACLE_METHODS
-            else "intended_targets_known_present"
-            if args.method == "utigsp_intended"
-            else "unknown"
-        ),
+        "target_knowledge": target_knowledge(args.method),
         "seed": args.seed,
         "data_sha256": info["data_sha256"],
         "source_commit": SOURCE_COMMIT,

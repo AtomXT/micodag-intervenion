@@ -3,9 +3,11 @@
 This pipeline evaluates the current paper's three unknown-target methods
 (PS-MIP, UT-IGSP*, and GnIES) on the biological benchmark used by Squires,
 Wang, and Uhler (UAI 2020).  The original paper's UT-IGSP variant with intended
-targets supplied is retained as a contextual curve.  Intended-target PS-MIP,
-IGSP, and GIES are kept as separate oracle references, matching the
-synthetic-experiment organization.
+targets supplied is retained as a contextual curve. A matching partial-target
+PS-MIP condition fixes each intended target present while leaving every other
+target indicator unknown, so off-target effects can still be learned. Exact
+intended-target PS-MIP, IGSP, and GIES are kept as separate oracle references,
+matching the synthetic-experiment organization.
 
 Run every command below from the repository root.  In particular, Slurm
 resolves each repository-relative `#SBATCH --output` path before the job shell
@@ -70,6 +72,7 @@ The paths are declared before seeing results:
 | Method | Path | Points |
 | --- | --- | ---: |
 | PS-MIP unknown | graph multiples 1/16 through 16 of `log(N)/N`; target penalty fixed at `16 log(N)/N` | 9 |
+| PS-MIP intended-present | same graph and target-penalty path; intended entries fixed to 1 and all other target indicators left unknown | 9 |
 | PS-MIP oracle | graph multiples 1/16 through 16 of `log(N)/N`; target penalty irrelevant because targets are fixed | 9 |
 | UT-IGSP* / intended-target UT-IGSP / IGSP | Sachs CI-alpha path; Gaussian invariance alpha `1e-20` | 8 each |
 | GnIES | authors' raw-Sachs multipliers `0.01,0.25,0.5,0.75,1,2`, each times `log(N)` | 6 |
@@ -129,7 +132,15 @@ sbatch experiments/quest_jobs/sachs_roc_utigsp_unknown.sh
 sbatch experiments/quest_jobs/sachs_roc_gnies_unknown.sh
 ```
 
-Submit the intended-target references separately:
+Submit the PS-MIP intended-present condition separately. It uses the same
+known-present interpretation as intended-target UT-IGSP: supplied intended
+targets cannot be removed, but additional off-targets may be learned.
+
+```bash
+sbatch experiments/quest_jobs/sachs_roc_ps_mip_intended.sh
+```
+
+Submit the exact intended-target oracle references separately:
 
 ```bash
 sbatch experiments/quest_jobs/sachs_roc_ps_mip_oracle.sh

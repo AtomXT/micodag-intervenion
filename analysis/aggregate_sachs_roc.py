@@ -47,6 +47,7 @@ SKELETON_NEGATIVES = 37
 SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 CONTEXT_TARGET_METHODS = {
     "ps_mip_unknown",
+    "ps_mip_intended",
     "utigsp_unknown",
     "utigsp_intended",
     "ps_mip_oracle",
@@ -56,6 +57,7 @@ CONTEXT_TARGET_METHODS = {
 ORACLE_TARGET_METHODS = {"ps_mip_oracle", "igsp_oracle", "gies_oracle"}
 GRAPH_REPRESENTATIONS = {
     "ps_mip_unknown": "dag_and_i_cpdag",
+    "ps_mip_intended": "dag_and_i_cpdag",
     "utigsp_unknown": "dag_and_i_cpdag",
     "utigsp_intended": "dag_and_i_cpdag",
     "ps_mip_oracle": "dag_and_i_cpdag",
@@ -353,11 +355,11 @@ def _parse_estimated_targets(
         raise ValueError(
             f"{method} estimated_targets must equal the intended-target oracle"
         )
-    if method == "utigsp_intended" and np.any(
+    if method in runner.KNOWN_PRESENT_METHODS and np.any(
         np.logical_and(intended_targets == 1, targets != 1)
     ):
         raise ValueError(
-            "utigsp_intended estimated_targets must contain every supplied "
+            f"{method} estimated_targets must contain every supplied "
             "known-present target"
         )
     canonical = json.dumps(targets.tolist(), separators=(",", ":"))
@@ -940,20 +942,7 @@ def aggregate_results(
         except ValueError as exc:
             reasons.append(str(exc))
 
-        oracle_methods = set(
-            getattr(
-                runner,
-                "ORACLE_METHODS",
-                {name for name in runner.METHODS if name.endswith("_oracle")},
-            )
-        )
-        expected_target_knowledge = (
-            "intended_targets_oracle"
-            if method in oracle_methods
-            else "intended_targets_known_present"
-            if method == "utigsp_intended"
-            else "unknown"
-        )
+        expected_target_knowledge = runner.target_knowledge(method)
         observed_target_knowledge = str(row["target_knowledge"]).strip()
         if observed_target_knowledge != expected_target_knowledge:
             reasons.append(
@@ -1256,7 +1245,8 @@ def aggregate_results(
             "oracle_methods_must_equal_intended_targets": sorted(
                 ORACLE_TARGET_METHODS
             ),
-            "utigsp_intended_semantics": (
+            "known_present_methods": sorted(runner.KNOWN_PRESENT_METHODS),
+            "known_present_semantics": (
                 "every supplied intended target must remain present; learned "
                 "off-targets are allowed"
             ),

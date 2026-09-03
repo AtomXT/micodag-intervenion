@@ -41,6 +41,7 @@ from src.sachs_data import DEFAULT_DATA_ROOT
 METHOD_STYLES: Mapping[str, Tuple[str, str]] = {
     "ps_mip_unknown": ("#1f77b4", "o"),
     "utigsp_unknown": ("#d62728", "D"),
+    "ps_mip_intended": ("#e377c2", "X"),
     "utigsp_intended": ("#9467bd", "P"),
     "gnies_unknown": ("#ff7f0e", "s"),
     "igsp_oracle": ("#8c564b", "<"),
