@@ -69,7 +69,8 @@ The paths are declared before seeing results:
 
 | Method | Path | Points |
 | --- | --- | ---: |
-| PS-MIP / oracle | multiples 1/16 through 16 of `log(N)/N` | 9 each |
+| PS-MIP unknown | graph multiples 1/16 through 16 of `log(N)/N`; target penalty fixed at `16 log(N)/N` | 9 |
+| PS-MIP oracle | graph multiples 1/16 through 16 of `log(N)/N`; target penalty irrelevant because targets are fixed | 9 |
 | UT-IGSP* / intended-target UT-IGSP / IGSP | Sachs CI-alpha path; Gaussian invariance alpha `1e-20` | 8 each |
 | GnIES | authors' raw-Sachs multipliers `0.01,0.25,0.5,0.75,1,2`, each times `log(N)` | 6 |
 | GIES | public UT-IGSP history's BIC multipliers `2,200,600,700,800,900` | 6 |

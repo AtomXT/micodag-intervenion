@@ -96,6 +96,23 @@ class SachsRunnerTests(unittest.TestCase):
             [len(run_sachs_roc.method_settings(method, data)) for method in run_sachs_roc.METHODS],
             [9, 8, 6, 8, 9, 8, 6],
         )
+        ps_unknown = run_sachs_roc.method_settings("ps_mip_unknown", data)
+        ps_base = np.log(5846) / 5846
+        np.testing.assert_allclose(
+            [setting["graph_penalty"] for setting in ps_unknown],
+            np.asarray(run_sachs_roc.PS_BIC_MULTIPLIERS) * ps_base,
+        )
+        np.testing.assert_allclose(
+            [setting["target_penalty"] for setting in ps_unknown],
+            run_sachs_roc.PS_TARGET_BIC_MULTIPLIER * ps_base,
+        )
+        self.assertEqual(
+            [setting["target_bic_multiplier"] for setting in ps_unknown],
+            [run_sachs_roc.PS_TARGET_BIC_MULTIPLIER] * len(ps_unknown),
+        )
+        self.assertTrue(
+            all(setting["setting_id"].endswith("_target_x16") for setting in ps_unknown)
+        )
         self.assertEqual(
             [
                 setting["alpha"]

@@ -92,9 +92,12 @@ METHOD_IMPLEMENTATION_FILES = {
     "gies_oracle": ("GIES.py", "src/main_experiment_cli.py"),
 }
 
-# The PS-MIP path is deliberately wider than the three-point synthetic path:
-# this is one fixed dataset and the goal is an ROC-style regularization path.
+# The PS-MIP graph path is deliberately wider than the three-point synthetic
+# path: this is one fixed dataset and the goal is an ROC-style regularization
+# path.  The unknown-target path holds its target penalty fixed so graph
+# sparsity is the only quantity swept along the curve.
 PS_BIC_MULTIPLIERS = (1 / 16, 1 / 8, 1 / 4, 1 / 2, 1, 2, 4, 8, 16)
+PS_TARGET_BIC_MULTIPLIER = 16
 
 # This is the eight-point Sachs path in the UT-IGSP authors' released code.
 UTIGSP_CI_ALPHAS = (0.1, 0.01, 0.001, 0.2, 0.3, 0.4, 0.5, 0.05)
@@ -209,21 +212,34 @@ def method_settings(method: str, data: Iterable[np.ndarray]) -> list[dict[str, A
     if method not in METHODS:
         raise ValueError(f"unknown Sachs method {method!r}")
     total = _total_samples(data)
-    if method in {"ps_mip_unknown", "ps_mip_oracle"}:
+    if method == "ps_mip_unknown":
+        base = log(total) / total
+        return [
+            {
+                "setting_id": (
+                    f"graph_x{_number_id(graph_multiplier)}"
+                    f"_target_x{_number_id(PS_TARGET_BIC_MULTIPLIER)}"
+                ),
+                "tuning_parameter": "graph_bic_multiplier",
+                "tuning_value": graph_multiplier,
+                "graph_penalty": graph_multiplier * base,
+                "target_penalty": PS_TARGET_BIC_MULTIPLIER * base,
+                "bic_multiplier": graph_multiplier,
+                "target_bic_multiplier": PS_TARGET_BIC_MULTIPLIER,
+            }
+            for graph_multiplier in PS_BIC_MULTIPLIERS
+        ]
+    if method == "ps_mip_oracle":
         base = log(total) / total
         return [
             {
                 "setting_id": f"bic_x{_number_id(multiplier)}",
-                "tuning_parameter": "graph_bic_multiplier"
-                if method == "ps_mip_oracle"
-                else "tied_graph_target_bic_multiplier",
+                "tuning_parameter": "graph_bic_multiplier",
                 "tuning_value": multiplier,
                 "graph_penalty": multiplier * base,
                 # This term is constant when targets are fixed, but saving the
                 # common base value keeps the score contract explicit.
-                "target_penalty": base
-                if method == "ps_mip_oracle"
-                else multiplier * base,
+                "target_penalty": base,
                 "bic_multiplier": multiplier,
             }
             for multiplier in PS_BIC_MULTIPLIERS
