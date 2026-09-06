@@ -11,6 +11,11 @@ experiment. Nothing here was deleted during the cleanup.
 - `local/` contains ignored machine-local artifacts such as earlier inspection
   files and solver logs. These remain on this workstation but are not intended
   for version control.
+- `sachs/2026-09-05/` preserves the later Sachs workflow, including all scripts,
+  raw/prepared data, result paths, diagnostics, plots, and tests. See its
+  [`ARCHIVE_README.md`](sachs/2026-09-05/ARCHIVE_README.md) for the per-file
+  manifest, verification, and restoration notes. Shared method dependencies
+  and the current manuscript were copied, not removed from the active project.
 
 The active main experiment does not read historical results or static data; its
 dedicated generator writes a separate validated suite under
@@ -19,6 +24,10 @@ dedicated generator writes a separate validated suite under
 scripts inside this archive retain historical fixture paths.
 
 ## Move manifest
+
+The superseded chamber launchers, screening scripts, and five-minute transfer
+bundle are preserved in [`causal_chambers/2026-09-06/`](causal_chambers/2026-09-06/README.md).
+Their results remain in the original, separate historical result directories.
 
 | Former location | Archived location |
 | --- | --- |

@@ -20,3 +20,6 @@ receive exactly the same arrays.
 
 Historical SyntheticData, Vary_n, RealData, and the older generator references
 are preserved under `archive/legacy_pipeline/data/`.
+
+The later six-context Sachs bundle is archived with its scripts and results
+under `archive/sachs/2026-09-05/data/sachs/`; it is not an active input.

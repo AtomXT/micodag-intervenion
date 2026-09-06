@@ -1,0 +1,20 @@
+{
+  "phase": "implementation_and_pre_fit_checks",
+  "chamber_tests_passed": 23,
+  "combined_regression_tests_run": 134,
+  "combined_regression_tests_passed": 133,
+  "combined_regression_tests_failed": 1,
+  "known_unrelated_failure": {
+    "test": "tests.test_official_competitor_adapters.MainRunnerOfficialSourceTests.test_quest_has_expected_method_specific_arrays",
+    "condition": "bacadi_unknown",
+    "expected_wall_time": "36:00:00",
+    "existing_script_wall_time": "24:00:00",
+    "note": "Pre-existing mismatch also reported before the chamber pilot; neither the BaCaDI script nor this test was modified."
+  },
+  "prepared_configurations": ["scm_4", "scm_5"],
+  "observations_per_configuration": 40000,
+  "variables": 10,
+  "reference_edges": 23,
+  "planned_fits": 194,
+  "completion_note": "This records implementation verification, not completion of the experimental batch. Consult result fragments and validated_summary.json for fit completion."
+}

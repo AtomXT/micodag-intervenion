@@ -17,7 +17,7 @@ from src.main_experiment_cli import (
     wall_time_limit,
 )
 from src.main_experiment_data import MainExperimentDataError
-from UTIGSP import _as_index, _validate_data
+from UTIGSP import _as_index, _validate_data, _load_hsic_invariance_test
 
 
 def _load_causaldag_api():
@@ -67,11 +67,16 @@ def fit(
     *,
     alpha=1e-5,
     alpha_inv=None,
+    invariance_test="gaussian",
     depth=4,
     nruns=10,
     seed=0,
 ):
-    """Fit official IGSP with one known target set per intervention environment."""
+    """Fit IGSP with complete target lists and Gaussian or HSIC invariance.
+
+    The Gaussian default preserves the synthetic experiment. Sachs can select
+    HSIC explicitly to match the UT-IGSP statistical testing protocol.
+    """
     arrays = _validate_data(data)
     p = arrays[0].shape[1]
     target_sets = _known_target_sets(known_targets, len(arrays) - 1, p)
@@ -79,6 +84,8 @@ def fit(
     alpha_inv = alpha if alpha_inv is None else float(alpha_inv)
     if not 0 < alpha < 1 or not 0 < alpha_inv < 1:
         raise ValueError("alpha and alpha_inv must lie strictly between 0 and 1")
+    if not isinstance(invariance_test, str) or invariance_test not in ("gaussian", "hsic"):
+        raise ValueError("invariance_test must be 'gaussian' or 'hsic'")
     depth = _as_index(depth, "depth")
     nruns = _as_index(nruns, "nruns", minimum=1)
     seed = _as_index(seed, "seed")
@@ -102,10 +109,15 @@ def fit(
         partial_correlation_suffstat(observational),
         alpha=alpha,
     )
+    if invariance_test == "gaussian":
+        invariance_fn = gauss_invariance_test
+        invariance_suffstat = gauss_invariance_suffstat(observational, interventions)
+    else:
+        invariance_fn = _load_hsic_invariance_test()
+        invariance_suffstat = dict(enumerate(interventions))
+        invariance_suffstat["obs_samples"] = observational
     invariance_tester = MemoizedInvarianceTester(
-        gauss_invariance_test,
-        gauss_invariance_suffstat(observational, interventions),
-        alpha=alpha_inv,
+        invariance_fn, invariance_suffstat, alpha=alpha_inv,
     )
     settings = [{"interventions": targets} for targets in target_sets]
 

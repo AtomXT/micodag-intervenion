@@ -1,0 +1,20 @@
+{
+  "design_sha256": "d96da6c2d2f3e300ab1744f4a26b194ff98426f770c511658857dc4f14cb1524",
+  "plot_code_sha256": "6572a585f74c61725e1ccd523d012c31c7ed598c66c0a8386fbcb5bcd71523f7",
+  "result_files": {},
+  "export_files": {
+    "validated_summary.json": "236f0447fa06ebc3368c1ca3896975cd1058c60254a8efdfd8132b074ac330be",
+    "all_operating_points.csv": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+    "scm_4_residual_diagnostics.png": "3a79c7b0bc3a16a67c07892289dc495f8ee8c7471b2ba0457e3c957a5195a93a",
+    "scm_4_ps_mip_only_sparse.png": "c812d04680b4ab00524a49e99d7f17cc8edd5d89387ff666c7253ba20c12ffca",
+    "scm_4_diagnostics.json": "955f06d118cd60784ad868817456eaa5e23067b1b65de2a9e910e1b6d9a661e2",
+    "causal_chambers_pilot.pdf": "5b1e75fb2dc687096055bf8d3e45fa0af881a38adfb14afee27d342fa4279a97",
+    "scm_4_seven_condition_rates.png": "773eeb73d95b2cde95efc2098c6da82f8b487c9ecabf9f5e65aa631e6e832956",
+    "scm_4_ps_mip_only_full.png": "4f1b2d0ecd1a8c14a5320c3f92c1e3e15a3d2c11b188302e400bb325e6a14f8b",
+    "RESULTS.md": "86b2c2b6341ee5d434049467502900b2361e7d2ac8cee650b60da76a36bf046b",
+    "scm_4_seven_condition_sparse.png": "54773a518af319dd3c6d791b5f9583bfc3d4e27544ef8bf0684a02998598dad7",
+    "scm_4_ps_mip_only_rates.png": "4824a532f7606b611d1c69d7f3b99f0e96a03f863c8d94e4299a1edaadfb8fa0",
+    "scm_4_seven_condition_full.png": "4a7e95238bfaff9a6696e5cae49e009f08f69a4a70fa9cf311113141a291cb67",
+    "causal_chambers_overview.png": "636db823ec5a7f1b4c2705f55df0d05fd742d7940681abaf57fbaa864b199524"
+  }
+}

@@ -58,11 +58,9 @@ second-moment matrices and the chosen coefficient bounds.
 | `experiments/generate_main_experiment_data.py` | Standalone generator for all persisted main-experiment datasets |
 | `experiments/test_main_experiment_setup.py` | No-save, one-instance check of the eight shared-environment methods, with optional BaCaDI inclusion |
 | `experiments/run_main_experiment.py` | Main shared-data synthetic experiment driver |
-| `experiments/SACHS_ROC_PLAN.md` | Exact-data, Quest, and evaluation plan for the Sachs biological benchmark |
-| `experiments/prepare_sachs_data.py` | Checksum-pinned acquisition and validation of the six UT-IGSP Sachs files |
-| `experiments/run_sachs_roc.py` | One-setting Sachs fitter for unknown-, intended-present-, and exact-oracle target conditions |
-| `analysis/aggregate_sachs_roc.py` | Strict adjacency-based aggregation of Sachs directed and skeleton ROC points |
-| `analysis/plot_sachs_roc.py` | Paper-compatible count plots and conventional normalized Sachs ROC plots |
+| `experiments/run_chamber_experiment.py` | Single entry point for the unscreened scm_4 physical experiment |
+| `experiments/CHAMBER_EXPERIMENT.md` | Chamber settings, one-hour method-specific Quest jobs, and plotting instructions |
+| `archive/sachs/2026-09-05/` | Archived Sachs scripts, data, all results, tests, and publication snapshots |
 | `analysis/plot_main_experiment_results.py` | Zero-argument plot of all currently available main-experiment results |
 | `analysis/aggregate_main_experiment.py` | Main graph and target recovery paths and best-`d_cpdag` potential tables |
 | `experiments/quest_jobs/main_experiment_<method>.sh` | Nine method-specific Slurm arrays, including the cell-wise BaCaDI array |
@@ -631,17 +629,20 @@ pipeline but remain available for provenance and reproduction. See
 `archive/README.md` before running an archived script; historical relative
 paths and dependencies are intentionally preserved rather than modernized.
 
-## Sachs biological benchmark
+## Archived Sachs biological benchmark
 
-The active real-data pipeline uses the exact six natural-log files, node
-ordering, five intervention contexts, and 18-edge accepted DAG released for
-the UT-IGSP Sachs analysis.  It does not reuse the archived all-condition
-dataset or its mislabeled false-positive-discovery plot. Its contextual
-conditions include both UT-IGSP and PS-MIP with each intended target fixed
-present while additional off-targets remain learnable. See
-[`experiments/SACHS_ROC_PLAN.md`](experiments/SACHS_ROC_PLAN.md) for the pinned
-source, the 5,846-row split, fixed method paths, Quest commands, and the strict
-post-run plot contract.
+The Sachs workflow was archived on September 5, 2026. Its preparation and
+execution scripts, Quest jobs, tests, raw/prepared data, all result paths,
+diagnostics, and plots now retain their original relative layout below
+[`archive/sachs/2026-09-05/`](archive/sachs/2026-09-05/ARCHIVE_README.md).
+This includes the selected-data, full-data, transformation, target-information,
+and weighted-penalty studies, without removing unfavorable or incomplete fits.
+
+Shared method implementations remain active for the synthetic and Causal
+Chambers experiments. The current manuscript and its dependencies remain in
+place; a copy and the Sachs Overleaf bundles are preserved with the archive.
+See its `MANIFEST.json` and `SHA256SUMS` for move/copy provenance and integrity
+checks. No archived study is run by the active chamber or synthetic pipeline.
 
 ## Data generators
 

@@ -14,6 +14,7 @@ import BaCaDI
 import DCDI
 import GIES
 import IGSP
+import UTIGSP
 from experiments import run_main_experiment as main_experiment
 
 
@@ -417,6 +418,152 @@ class IGSPOfficialSourceTests(unittest.TestCase):
         self.assertEqual(captured["nodes"], {0, 1})
         self.assertEqual(captured["kwargs"], {"depth": 4, "nruns": 2})
         np.testing.assert_array_equal(dag, [[0, 1], [0, 0]])
+
+
+class UTIGSPOfficialSourceTests(unittest.TestCase):
+    def _fake_api(self):
+        captured = {}
+        testers = []
+
+        class FakeTester:
+            def __init__(self, test, suffstat, **kwargs):
+                self.test = test
+                self.suffstat = suffstat
+                self.kwargs = kwargs
+                testers.append(self)
+
+        class FakeDag:
+            def to_amat(self, node_list):
+                return np.zeros((len(node_list), len(node_list))), node_list
+
+        def fake_utigsp(settings, nodes, ci_tester, invariance_tester, **kwargs):
+            captured.update(
+                settings=settings,
+                nodes=nodes,
+                ci_tester=ci_tester,
+                invariance_tester=invariance_tester,
+                kwargs=kwargs,
+            )
+            return FakeDag(), [set() for _ in settings]
+
+        gauss_suffstat = mock.Mock(return_value=mock.sentinel.gauss_suffstat)
+        gauss_test = object()
+        partial_suffstat = mock.Mock(return_value=mock.sentinel.ci_suffstat)
+        partial_test = object()
+        api = (
+            FakeTester,
+            FakeTester,
+            gauss_suffstat,
+            gauss_test,
+            partial_suffstat,
+            partial_test,
+            fake_utigsp,
+        )
+        return (
+            api,
+            captured,
+            testers,
+            gauss_suffstat,
+            gauss_test,
+            partial_suffstat,
+            partial_test,
+        )
+
+    def test_default_invariance_test_preserves_gaussian_path(self):
+        observational = np.array([[0.0, 1.0], [1.0, 0.0]])
+        interventions = [
+            np.array([[2.0, 1.0], [3.0, 0.0]]),
+            np.array([[1.0, 2.0], [0.0, 3.0]]),
+        ]
+        (
+            api,
+            captured,
+            testers,
+            gauss_suffstat,
+            gauss_test,
+            partial_suffstat,
+            partial_test,
+        ) = self._fake_api()
+
+        with (
+            mock.patch.object(UTIGSP, "_load_causaldag_api", return_value=api),
+            mock.patch.object(UTIGSP, "_load_hsic_invariance_test") as load_hsic,
+        ):
+            UTIGSP.fit(
+                [observational, *interventions],
+                alpha=0.1,
+                alpha_inv=0.02,
+                nruns=1,
+            )
+
+        load_hsic.assert_not_called()
+        partial_suffstat.assert_called_once_with(observational)
+        gauss_suffstat.assert_called_once()
+        np.testing.assert_array_equal(gauss_suffstat.call_args.args[0], observational)
+        for actual, expected in zip(
+            gauss_suffstat.call_args.args[1], interventions
+        ):
+            np.testing.assert_array_equal(actual, expected)
+        self.assertIs(captured["ci_tester"], testers[0])
+        self.assertIs(testers[0].test, partial_test)
+        self.assertIs(testers[0].suffstat, mock.sentinel.ci_suffstat)
+        self.assertIs(captured["invariance_tester"], testers[1])
+        self.assertIs(testers[1].test, gauss_test)
+        self.assertIs(testers[1].suffstat, mock.sentinel.gauss_suffstat)
+        self.assertEqual(testers[1].kwargs, {"alpha": 0.02})
+
+    def test_hsic_invariance_test_receives_paper_era_suffstat(self):
+        observational = np.array([[0.0, 1.0], [1.0, 0.0]])
+        interventions = [
+            np.array([[2.0, 1.0], [3.0, 0.0]]),
+            np.array([[1.0, 2.0], [0.0, 3.0]]),
+        ]
+        (
+            api,
+            captured,
+            testers,
+            gauss_suffstat,
+            _gauss_test,
+            _partial_suffstat,
+            _partial_test,
+        ) = self._fake_api()
+        hsic_test = object()
+
+        with (
+            mock.patch.object(UTIGSP, "_load_causaldag_api", return_value=api),
+            mock.patch.object(
+                UTIGSP, "_load_hsic_invariance_test", return_value=hsic_test
+            ) as load_hsic,
+        ):
+            UTIGSP.fit(
+                [observational, *interventions],
+                alpha=0.1,
+                alpha_inv=0.02,
+                invariance_test="hsic",
+                nruns=1,
+            )
+
+        load_hsic.assert_called_once_with()
+        gauss_suffstat.assert_not_called()
+        self.assertIs(captured["invariance_tester"], testers[1])
+        self.assertIs(testers[1].test, hsic_test)
+        self.assertEqual(testers[1].kwargs, {"alpha": 0.02})
+        suffstat = testers[1].suffstat
+        self.assertEqual(list(suffstat), [0, 1, "obs_samples"])
+        np.testing.assert_array_equal(suffstat["obs_samples"], observational)
+        for environment, expected in enumerate(interventions):
+            np.testing.assert_array_equal(suffstat[environment], expected)
+
+    def test_unknown_invariance_test_is_rejected_before_import(self):
+        with mock.patch.object(UTIGSP, "_load_causaldag_api") as load_api:
+            with self.assertRaisesRegex(
+                ValueError, "invariance_test must be 'gaussian' or 'hsic'"
+            ):
+                UTIGSP.fit(
+                    [np.ones((2, 2)), np.zeros((2, 2))],
+                    invariance_test="kernel",
+                )
+        load_api.assert_not_called()
 
 
 class MainRunnerOfficialSourceTests(unittest.TestCase):

@@ -1,0 +1,15 @@
+# Tested local versions. Install in a dedicated Python 3.9 environment if needed.
+# Quest must have a usable Gurobi license; pip does not configure licensing.
+numpy==1.26.4
+scipy==1.13.1
+pandas==2.2.3
+scikit-learn==1.6.1
+networkx==3.2.1
+matplotlib==3.9.4
+gurobipy==12.0.3
+gnies==0.3.3
+gies==0.0.3
+causaldag==0.1a163
+conditional_independence==0.1a6
+graphical_models==0.1a21
+graphical_model_learning==0.1a8

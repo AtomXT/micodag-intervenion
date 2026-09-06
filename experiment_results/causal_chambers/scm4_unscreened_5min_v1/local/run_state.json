@@ -1,0 +1,10 @@
+{
+  "status": "stopped_for_quest_handoff",
+  "dispatcher_pid": 91248,
+  "active_job_index": 1,
+  "profile": "scm4_unscreened_5min_v1",
+  "design_sha256": "d96da6c2d2f3e300ab1744f4a26b194ff98426f770c511658857dc4f14cb1524",
+  "utc": "2026-09-06T03:24:31Z",
+  "stop_record": "quest_handoff.json",
+  "note": "Incomplete local batch; preserved fragments are not imported into Quest."
+}

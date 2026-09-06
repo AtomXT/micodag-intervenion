@@ -1,0 +1,13 @@
+{
+  "utc": "2026-09-06T03:09:09Z",
+  "reason": "User approved replacement with scm_4 only, unscreened, 300-second fits under a new output root.",
+  "dispatcher_pid": 87816,
+  "worker_pid": 90712,
+  "worker_job_index": 3,
+  "actions": ["Verified exact dispatcher command, worker parent, process group and output root", "Sent SIGTERM to dispatcher to prevent further dispatch", "Sent SIGINT only to active worker", "Worker returned and saved within approximately one second; no forced worker termination needed"],
+  "preserved_results": 4,
+  "certified_results": 3,
+  "interrupted_feasible_results": 1,
+  "interrupted_result": "scm_4/parts/ps_mip_complete/setting_04.json",
+  "note": "Frozen design, completed results and logs were not rewritten. The interrupted feasible result retains solver_status=interrupted and is not certified optimal. These old fits will not be imported into the new five-minute run."
+}

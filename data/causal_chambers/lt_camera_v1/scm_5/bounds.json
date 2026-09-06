@@ -1,0 +1,26 @@
+{
+  "bounds": {
+    "gamma_lower": 1e-05,
+    "gamma_upper": 49.57913500888579,
+    "coefficient_bound": 39.77208263785905
+  },
+  "min_diagonal": 0.9743465820943793,
+  "max_diagonal": 4.957913500888579,
+  "max_abs_coefficient": 3.9772082637859048,
+  "coefficient_witness": {
+    "node": 2,
+    "parents": [
+      1,
+      4,
+      6,
+      7,
+      8
+    ],
+    "mask": 5
+  },
+  "local_optima_checked": 40960,
+  "parent_sets": 5120,
+  "target_masks_per_parent_set": 8,
+  "input_sha256": "255d0c6fe1f54a653554f46b8788d8603e07a462c15a19c9ce56a9b61e27a6e3",
+  "rule": "all local optima, tenfold margin, retain looser existing bounds"
+}

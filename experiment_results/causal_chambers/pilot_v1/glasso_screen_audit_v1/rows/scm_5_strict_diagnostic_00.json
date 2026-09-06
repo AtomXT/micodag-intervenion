@@ -1,0 +1,25 @@
+{
+  "constant": 0.125,
+  "alpha": 0.0018967839117314332,
+  "solver": "strict_diagnostic",
+  "reference_input_sha256": "bcdf1da589d51ef2241edbcc7c693d865066b4044929c0f65a510c0686e9c5c1",
+  "status": "failed",
+  "exception_type": "FloatingPointError",
+  "error": "Non SPD result: the system is too ill-conditioned for this solver. The system is too ill-conditioned for this solver",
+  "warning_counts": {
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: nan, tolerance: 5.171518153664021e-08": 2,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: nan, tolerance: 5.448653514761329e-08": 2,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: nan, tolerance: 5.340456817682696e-08": 2,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: nan, tolerance: 5.362870797195528e-08": 2,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: nan, tolerance: 5.242051824818237e-08": 2,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: nan, tolerance: 5.394037354338385e-08": 2,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: nan, tolerance: 2.8169108720529335e-08": 1,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: nan, tolerance: 5.5688323215420036e-08": 1,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: nan, tolerance: 4.114558001941818e-08": 1
+  },
+  "convergence_warning_count": 15,
+  "numerically_clean": false,
+  "seconds": 0.0043966659999998825,
+  "configuration": "scm_5",
+  "design_sha256": "fd0fcff8d4f22392c2f5d314c8c34d034e57ba2bc5598d68856248451d3b5286"
+}

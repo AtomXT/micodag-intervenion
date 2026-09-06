@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "constants": [
+    0.125,
+    0.25,
+    0.5,
+    1.0,
+    2.0,
+    4.0
+  ],
+  "solvers": {
+    "existing_defaults": {},
+    "strict_diagnostic": {
+      "max_iter": 2000,
+      "tol": 1e-06,
+      "enet_tol": 1e-08
+    }
+  },
+  "primary_rule": "existing_defaults, c=1; same helper as synthetic experiments",
+  "alpha_formula": "c*sqrt(log(p)/n_ref)",
+  "support_threshold": 1e-08,
+  "screen_inputs": "reference only; no graph or target labels",
+  "scope": "post-hoc screening audit, not replacement of frozen pilot",
+  "configurations": {
+    "scm_4": {
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "metadata_sha256": "87489f79460dbc01ad51218a70884ad61e2de07649d945db558fb17a46a3fa23"
+    },
+    "scm_5": {
+      "data_sha256": "da094329ba44f2106d6ce55e6731aface438052b6373891bfb279840f90b231c",
+      "metadata_sha256": "cd2ad2686345bea861942c3848e512f087d4feddcfea6a1336ca0f25e6b7626b"
+    }
+  },
+  "implementation": {
+    "experiments/audit_chamber_glasso.py": "ca6da79acafff14bee6a29143acd5424855f4c11ec84c92a0d1d4fc4442018fe",
+    "MIP.py": "b6ba5d31edf2ecb82b71eb6b590bea1ff6b6ff900c5c744742357c6b13771618",
+    "src/main_experiment_cli.py": "3971c9b64c749326facfe77fdc694eb06820184553dc6cd40d233b6c6782e5e2",
+    "src/chamber_data.py": "b4bab3249cd3e81507d203c2ae28eda8ea3dfa9d0a6e3a0afdf51aa66e86bad5"
+  },
+  "versions": {
+    "numpy": "1.26.4",
+    "sklearn": "1.6.1"
+  },
+  "graphical_lasso_signature": "(alpha=0.01, *, mode='cd', covariance=None, tol=0.0001, enet_tol=0.0001, max_iter=100, verbose=False, eps=2.220446049250313e-16, assume_centered=False)"
+}

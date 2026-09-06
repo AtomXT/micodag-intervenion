@@ -1,0 +1,18 @@
+{
+  "profile": "scm4_unscreened_5min_v1",
+  "planned": 97,
+  "accounted": 0,
+  "all_planned_accounted": false,
+  "all_planned_successful": false,
+  "status_counts": {
+    "ok": 0,
+    "ok_nonoptimal": 0,
+    "failed": 0,
+    "watchdog_timeout": 0,
+    "process_failed": 0,
+    "timeout": 0
+  },
+  "budget_overruns": [],
+  "design_sha256": "d96da6c2d2f3e300ab1744f4a26b194ff98426f770c511658857dc4f14cb1524",
+  "export_status": "complete"
+}

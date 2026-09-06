@@ -49,6 +49,18 @@ def _load_causaldag_api():
     )
 
 
+def _load_hsic_invariance_test():
+    """Import causaldag's optional HSIC invariance test on demand."""
+    try:
+        from causaldag import hsic_invariance_test
+    except Exception as exc:
+        raise ImportError(
+            "HSIC invariance testing requires a compatible causaldag "
+            "installation and its required dependencies."
+        ) from exc
+    return hsic_invariance_test
+
+
 def _validate_data(data):
     """Return finite, consistently shaped arrays in environment order."""
     try:
@@ -141,6 +153,7 @@ def fit(
     known_interventions=None,
     alpha=1e-5,
     alpha_inv=None,
+    invariance_test="gaussian",
     depth=4,
     nruns=10,
     seed=0,
@@ -162,6 +175,9 @@ def fit(
     alpha_inv:
         Significance level for conditional-invariance tests. If omitted, it
         is tied to ``alpha``.
+    invariance_test:
+        Conditional-invariance test to use. ``"gaussian"`` preserves the
+        default Gaussian test; ``"hsic"`` uses the paper-era kernel test.
     depth, nruns:
         UT-IGSP search depth and number of initial runs. Their defaults match
         the published simulation implementation.
@@ -185,6 +201,11 @@ def fit(
     alpha_inv = alpha if alpha_inv is None else float(alpha_inv)
     if not 0 < alpha < 1 or not 0 < alpha_inv < 1:
         raise ValueError("alpha and alpha_inv must lie strictly between 0 and 1")
+    if not isinstance(invariance_test, str) or invariance_test not in (
+        "gaussian",
+        "hsic",
+    ):
+        raise ValueError("invariance_test must be 'gaussian' or 'hsic'")
     depth = _as_index(depth, "depth")
     nruns = _as_index(nruns, "nruns", minimum=1)
     seed = _as_index(seed, "seed")
@@ -204,14 +225,23 @@ def fit(
     observational = arrays[0]
     interventions = arrays[1:]
     ci_suffstat = partial_correlation_suffstat(observational)
-    invariance_suffstat = gauss_invariance_suffstat(
-        observational, interventions
-    )
+    if invariance_test == "gaussian":
+        invariance_test_fn = gauss_invariance_test
+        invariance_suffstat = gauss_invariance_suffstat(
+            observational, interventions
+        )
+    else:
+        invariance_test_fn = _load_hsic_invariance_test()
+        invariance_suffstat = {
+            environment: samples
+            for environment, samples in enumerate(interventions)
+        }
+        invariance_suffstat["obs_samples"] = observational
     ci_tester = MemoizedCI_Tester(
         partial_correlation_test, ci_suffstat, alpha=alpha
     )
     invariance_tester = MemoizedInvarianceTester(
-        gauss_invariance_test, invariance_suffstat, alpha=alpha_inv
+        invariance_test_fn, invariance_suffstat, alpha=alpha_inv
     )
     settings = [dict(known_interventions=targets) for targets in known_sets]
 

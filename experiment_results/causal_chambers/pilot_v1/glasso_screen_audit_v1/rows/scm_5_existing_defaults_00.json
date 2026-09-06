@@ -1,0 +1,27 @@
+{
+  "constant": 0.125,
+  "alpha": 0.0018967839117314332,
+  "solver": "existing_defaults",
+  "reference_input_sha256": "bcdf1da589d51ef2241edbcc7c693d865066b4044929c0f65a510c0686e9c5c1",
+  "status": "failed",
+  "exception_type": "FloatingPointError",
+  "error": "Non SPD result: the system is too ill-conditioned for this solver. The system is too ill-conditioned for this solver",
+  "warning_counts": {
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 1.3094994367275885, tolerance: 0.00041145580019418183": 1,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 1.8666344732435176, tolerance: 0.0005171518153664021": 1,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 1.9745950219959543, tolerance: 0.0005448653514761329": 1,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: nan, tolerance: 0.0005242051824818237": 2,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: nan, tolerance: 0.0005394037354338385": 2,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: nan, tolerance: 0.00028169108720529337": 1,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: nan, tolerance: 0.0005568832321542004": 1,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: nan, tolerance: 0.0003980191986137285": 1,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: nan, tolerance: 0.00041145580019418183": 1,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: nan, tolerance: 0.0005171518153664021": 1,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: nan, tolerance: 0.0005448653514761329": 1
+  },
+  "convergence_warning_count": 13,
+  "numerically_clean": false,
+  "seconds": 0.001036083000000243,
+  "configuration": "scm_5",
+  "design_sha256": "fd0fcff8d4f22392c2f5d314c8c34d034e57ba2bc5598d68856248451d3b5286"
+}

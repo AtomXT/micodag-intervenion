@@ -1,0 +1,12 @@
+{
+  "utc": "2026-09-06T03:24:31Z",
+  "reason": "User requested moving execution to Quest instead of continuing locally.",
+  "dispatcher_pid": 91248,
+  "worker_pid": 91525,
+  "active_job_index": 1,
+  "actions": ["Paused the verified dispatcher to prevent a dispatch race", "Terminated dispatcher", "Interrupted only its verified worker and allowed graceful result saving"],
+  "preserved_results": 2,
+  "first_result": {"job_index": 0, "status": "ok_nonoptimal", "solver_status": "time_limit", "solve_seconds": 300.0057349205017},
+  "second_result": {"job_index": 1, "status": "ok_nonoptimal", "solver_status": "interrupted", "solve_seconds": 29.817703008651733},
+  "notes": "This local batch is intentionally incomplete. No local fits will be copied into Quest results. No completion automation was created before the user changed the execution request."
+}

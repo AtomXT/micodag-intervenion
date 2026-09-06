@@ -1,0 +1,20 @@
+{
+  "profile": "scm4_unscreened_5min_v1",
+  "chamber_and_screening_tests": {"run": 41, "passed": 41, "failed": 0},
+  "synthetic_and_sachs_regression_tests": {
+    "run": 127,
+    "passed": 126,
+    "failed": 1,
+    "failure": "tests.test_official_competitor_adapters.MainRunnerOfficialSourceTests.test_quest_has_expected_method_specific_arrays, bacadi_unknown subtest",
+    "reason": "Existing unrelated test expects a 36-hour Quest directive; existing BaCaDI script contains 24 hours. Neither file was changed for this run. The same failure was observed before the chamber work."
+  },
+  "planned_fits": 97,
+  "configurations": ["scm_4"],
+  "sample_sizes": [10000, 10000, 10000, 10000],
+  "screening_enabled": false,
+  "candidate_pairs": 45,
+  "parent_sets": 5120,
+  "fit_limit_seconds": 300,
+  "watchdog_seconds": 360,
+  "notes": "Pre-run implementation verification, not a claim that the 97-fit experiment has completed. See completion.json and validated_summary.json after final export."
+}

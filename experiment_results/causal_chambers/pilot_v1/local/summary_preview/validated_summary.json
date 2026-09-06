@@ -1,0 +1,321 @@
+{
+  "planned": 194,
+  "accounted": 0,
+  "all_planned_accounted": false,
+  "all_planned_successful": false,
+  "design_sha256": "7d036d9419764c20e05c5bce8075ea50009bdcfe06ac2228530f328149b2346e",
+  "configurations": {
+    "scm_4": {
+      "ps_mip_complete": {
+        "planned": 17,
+        "accounted": 0,
+        "successful": 0,
+        "status_counts": {
+          "ok": 0,
+          "ok_nonoptimal": 0,
+          "failed": 0,
+          "watchdog_timeout": 0,
+          "process_failed": 0
+        },
+        "outside_25_fp": {
+          "directed": 0,
+          "skeleton": 0
+        },
+        "minimum_directed_fp": null,
+        "best_at_directed_fp_budget": {
+          "3": null,
+          "5": null
+        },
+        "elapsed_seconds": 0
+      },
+      "ps_mip_present": {
+        "planned": 17,
+        "accounted": 0,
+        "successful": 0,
+        "status_counts": {
+          "ok": 0,
+          "ok_nonoptimal": 0,
+          "failed": 0,
+          "watchdog_timeout": 0,
+          "process_failed": 0
+        },
+        "outside_25_fp": {
+          "directed": 0,
+          "skeleton": 0
+        },
+        "minimum_directed_fp": null,
+        "best_at_directed_fp_budget": {
+          "3": null,
+          "5": null
+        },
+        "elapsed_seconds": 0
+      },
+      "ps_mip_unknown": {
+        "planned": 17,
+        "accounted": 0,
+        "successful": 0,
+        "status_counts": {
+          "ok": 0,
+          "ok_nonoptimal": 0,
+          "failed": 0,
+          "watchdog_timeout": 0,
+          "process_failed": 0
+        },
+        "outside_25_fp": {
+          "directed": 0,
+          "skeleton": 0
+        },
+        "minimum_directed_fp": null,
+        "best_at_directed_fp_budget": {
+          "3": null,
+          "5": null
+        },
+        "elapsed_seconds": 0
+      },
+      "utigsp_present": {
+        "planned": 8,
+        "accounted": 0,
+        "successful": 0,
+        "status_counts": {
+          "ok": 0,
+          "ok_nonoptimal": 0,
+          "failed": 0,
+          "watchdog_timeout": 0,
+          "process_failed": 0
+        },
+        "outside_25_fp": {
+          "directed": 0,
+          "skeleton": 0
+        },
+        "minimum_directed_fp": null,
+        "best_at_directed_fp_budget": {
+          "3": null,
+          "5": null
+        },
+        "elapsed_seconds": 0
+      },
+      "gnies_present": {
+        "planned": 15,
+        "accounted": 0,
+        "successful": 0,
+        "status_counts": {
+          "ok": 0,
+          "ok_nonoptimal": 0,
+          "failed": 0,
+          "watchdog_timeout": 0,
+          "process_failed": 0
+        },
+        "outside_25_fp": {
+          "directed": 0,
+          "skeleton": 0
+        },
+        "minimum_directed_fp": null,
+        "best_at_directed_fp_budget": {
+          "3": null,
+          "5": null
+        },
+        "elapsed_seconds": 0
+      },
+      "gies_complete": {
+        "planned": 15,
+        "accounted": 0,
+        "successful": 0,
+        "status_counts": {
+          "ok": 0,
+          "ok_nonoptimal": 0,
+          "failed": 0,
+          "watchdog_timeout": 0,
+          "process_failed": 0
+        },
+        "outside_25_fp": {
+          "directed": 0,
+          "skeleton": 0
+        },
+        "minimum_directed_fp": null,
+        "best_at_directed_fp_budget": {
+          "3": null,
+          "5": null
+        },
+        "elapsed_seconds": 0
+      },
+      "igsp_complete": {
+        "planned": 8,
+        "accounted": 0,
+        "successful": 0,
+        "status_counts": {
+          "ok": 0,
+          "ok_nonoptimal": 0,
+          "failed": 0,
+          "watchdog_timeout": 0,
+          "process_failed": 0
+        },
+        "outside_25_fp": {
+          "directed": 0,
+          "skeleton": 0
+        },
+        "minimum_directed_fp": null,
+        "best_at_directed_fp_budget": {
+          "3": null,
+          "5": null
+        },
+        "elapsed_seconds": 0
+      }
+    },
+    "scm_5": {
+      "ps_mip_complete": {
+        "planned": 17,
+        "accounted": 0,
+        "successful": 0,
+        "status_counts": {
+          "ok": 0,
+          "ok_nonoptimal": 0,
+          "failed": 0,
+          "watchdog_timeout": 0,
+          "process_failed": 0
+        },
+        "outside_25_fp": {
+          "directed": 0,
+          "skeleton": 0
+        },
+        "minimum_directed_fp": null,
+        "best_at_directed_fp_budget": {
+          "3": null,
+          "5": null
+        },
+        "elapsed_seconds": 0
+      },
+      "ps_mip_present": {
+        "planned": 17,
+        "accounted": 0,
+        "successful": 0,
+        "status_counts": {
+          "ok": 0,
+          "ok_nonoptimal": 0,
+          "failed": 0,
+          "watchdog_timeout": 0,
+          "process_failed": 0
+        },
+        "outside_25_fp": {
+          "directed": 0,
+          "skeleton": 0
+        },
+        "minimum_directed_fp": null,
+        "best_at_directed_fp_budget": {
+          "3": null,
+          "5": null
+        },
+        "elapsed_seconds": 0
+      },
+      "ps_mip_unknown": {
+        "planned": 17,
+        "accounted": 0,
+        "successful": 0,
+        "status_counts": {
+          "ok": 0,
+          "ok_nonoptimal": 0,
+          "failed": 0,
+          "watchdog_timeout": 0,
+          "process_failed": 0
+        },
+        "outside_25_fp": {
+          "directed": 0,
+          "skeleton": 0
+        },
+        "minimum_directed_fp": null,
+        "best_at_directed_fp_budget": {
+          "3": null,
+          "5": null
+        },
+        "elapsed_seconds": 0
+      },
+      "utigsp_present": {
+        "planned": 8,
+        "accounted": 0,
+        "successful": 0,
+        "status_counts": {
+          "ok": 0,
+          "ok_nonoptimal": 0,
+          "failed": 0,
+          "watchdog_timeout": 0,
+          "process_failed": 0
+        },
+        "outside_25_fp": {
+          "directed": 0,
+          "skeleton": 0
+        },
+        "minimum_directed_fp": null,
+        "best_at_directed_fp_budget": {
+          "3": null,
+          "5": null
+        },
+        "elapsed_seconds": 0
+      },
+      "gnies_present": {
+        "planned": 15,
+        "accounted": 0,
+        "successful": 0,
+        "status_counts": {
+          "ok": 0,
+          "ok_nonoptimal": 0,
+          "failed": 0,
+          "watchdog_timeout": 0,
+          "process_failed": 0
+        },
+        "outside_25_fp": {
+          "directed": 0,
+          "skeleton": 0
+        },
+        "minimum_directed_fp": null,
+        "best_at_directed_fp_budget": {
+          "3": null,
+          "5": null
+        },
+        "elapsed_seconds": 0
+      },
+      "gies_complete": {
+        "planned": 15,
+        "accounted": 0,
+        "successful": 0,
+        "status_counts": {
+          "ok": 0,
+          "ok_nonoptimal": 0,
+          "failed": 0,
+          "watchdog_timeout": 0,
+          "process_failed": 0
+        },
+        "outside_25_fp": {
+          "directed": 0,
+          "skeleton": 0
+        },
+        "minimum_directed_fp": null,
+        "best_at_directed_fp_budget": {
+          "3": null,
+          "5": null
+        },
+        "elapsed_seconds": 0
+      },
+      "igsp_complete": {
+        "planned": 8,
+        "accounted": 0,
+        "successful": 0,
+        "status_counts": {
+          "ok": 0,
+          "ok_nonoptimal": 0,
+          "failed": 0,
+          "watchdog_timeout": 0,
+          "process_failed": 0
+        },
+        "outside_25_fp": {
+          "directed": 0,
+          "skeleton": 0
+        },
+        "minimum_directed_fp": null,
+        "best_at_directed_fp_budget": {
+          "3": null,
+          "5": null
+        },
+        "elapsed_seconds": 0
+      }
+    }
+  }
+}

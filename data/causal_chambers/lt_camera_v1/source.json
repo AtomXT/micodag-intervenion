@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "dataset": "lt_camera_v1",
+  "revisions": {
+    "juangamella/causal-chamber": "2f059123f4ac6f4724338154825630bf4ab74ac0",
+    "juangamella/causal-chamber-package": "9fb5d82e391bb91a89a64f2e1c9b6ae8e7aed6d6"
+  },
+  "archive": {
+    "url": "https://causalchamber.s3.eu-central-1.amazonaws.com/downloadables/lt_camera_v1.zip",
+    "size": 4610371052,
+    "etag": "\"24bf0f9fb3542e45a9b55a150c0b3789-269\"",
+    "version_id": "tF50ydkP7ezpPMcSN.Gbn6N9BOsihRG9",
+    "last_modified": "Tue, 07 Jan 2025 10:46:52 GMT"
+  },
+  "archive_bytes_read": 36255821,
+  "files": {
+    "source/adjacency_lt_camera.csv": {
+      "sha256": "f500d4be9f225dd2fc8aeaad7e8dd233a7452080d8010407cadfe55acce34a56",
+      "url": "https://raw.githubusercontent.com/juangamella/causal-chamber-package/9fb5d82e391bb91a89a64f2e1c9b6ae8e7aed6d6/causalchamber/ground_truth/adjacencies/adjacency_lt_camera.csv"
+    },
+    "source/README.md": {
+      "sha256": "9a6e897e58de1dfe92370ff64f56e10db0b1bd4e2301952ec3138cb710750b36",
+      "url": "https://raw.githubusercontent.com/juangamella/causal-chamber/2f059123f4ac6f4724338154825630bf4ab74ac0/datasets/lt_camera_v1/README.md"
+    },
+    "source/variables.csv": {
+      "sha256": "2ca7fdb0f404d458bbe85cb3e4829e47302555c9317ed721243b018e754306a3",
+      "url": "https://raw.githubusercontent.com/juangamella/causal-chamber/2f059123f4ac6f4724338154825630bf4ab74ac0/datasets/lt_camera_v1/variables.csv"
+    },
+    "source/generators_scm_4.py": {
+      "sha256": "7afb76374e752b10785ad56ac294b13e4ef68c03e3e10275ac9f12e60459145b",
+      "url": "https://raw.githubusercontent.com/juangamella/causal-chamber/2f059123f4ac6f4724338154825630bf4ab74ac0/datasets/lt_camera_v1/generators/scm_4.py"
+    },
+    "source/generators_scm_5.py": {
+      "sha256": "4dace93a5b84c38efab6ba6c9345b814488a4ffc6775e26277a70c8b35915723",
+      "url": "https://raw.githubusercontent.com/juangamella/causal-chamber/2f059123f4ac6f4724338154825630bf4ab74ac0/datasets/lt_camera_v1/generators/scm_5.py"
+    },
+    "source/LICENSE_DATASETS.txt": {
+      "sha256": "9e5f1b3c610b9c2da5c313bf81d577a7d1acec686bdb0384edefa6df0f90cd94",
+      "url": "https://raw.githubusercontent.com/juangamella/causal-chamber/2f059123f4ac6f4724338154825630bf4ab74ac0/datasets/lt_camera_v1/LICENSE_DATASETS.txt"
+    },
+    "source/LICENSE_SOFTWARE.txt": {
+      "sha256": "673c8e566a15dac9543adc614c8edf8baab4a025fb37d525ade75abfde8150ce",
+      "url": "https://raw.githubusercontent.com/juangamella/causal-chamber/2f059123f4ac6f4724338154825630bf4ab74ac0/datasets/lt_camera_v1/LICENSE_SOFTWARE.txt"
+    },
+    "raw/scm_4_reference.csv": {
+      "sha256": "df72c6dbb1c5e15a3db3981eebc3683b86ddcf6ea11c645841d85dbd88b2442d",
+      "archive_member": "lt_camera_v1/scm_4_reference/scm_4_reference.csv",
+      "crc32": 3510226542,
+      "uncompressed_bytes": 2903796,
+      "compressed_bytes": 494417
+    },
+    "raw/scm_4_red.csv": {
+      "sha256": "a6e4c479c02c246f5e99dc7d6df20e78f88956226b43ee0bc8d7a8826eef5623",
+      "archive_member": "lt_camera_v1/scm_4_red/scm_4_red.csv",
+      "crc32": 2681987565,
+      "uncompressed_bytes": 2923191,
+      "compressed_bytes": 498167
+    },
+    "raw/scm_4_green.csv": {
+      "sha256": "79d6250bbdc466b65702e658d551767ead7e613440beefd592ea3c654a1506af",
+      "archive_member": "lt_camera_v1/scm_4_green/scm_4_green.csv",
+      "crc32": 3726397245,
+      "uncompressed_bytes": 2889602,
+      "compressed_bytes": 488395
+    },
+    "raw/scm_4_blue.csv": {
+      "sha256": "4508d5e6620c162dfb7361695bb7e3c97bdc627f3c95abe0a069e8f2110e2310",
+      "archive_member": "lt_camera_v1/scm_4_blue/scm_4_blue.csv",
+      "crc32": 4022594309,
+      "uncompressed_bytes": 2885953,
+      "compressed_bytes": 481145
+    },
+    "raw/scm_5_reference.csv": {
+      "sha256": "827d045e91dc58a19ef0bb6b337d70b3625d303b98deb53935b896add8ea44f3",
+      "archive_member": "lt_camera_v1/scm_5_reference/scm_5_reference.csv",
+      "crc32": 1253649599,
+      "uncompressed_bytes": 2909037,
+      "compressed_bytes": 504296
+    },
+    "raw/scm_5_red.csv": {
+      "sha256": "3c912d8a6676dc746a461814e2b29894ad0c30864b295a5d1938c8efe264ffb5",
+      "archive_member": "lt_camera_v1/scm_5_red/scm_5_red.csv",
+      "crc32": 2748687366,
+      "uncompressed_bytes": 2918251,
+      "compressed_bytes": 505355
+    },
+    "raw/scm_5_green.csv": {
+      "sha256": "4a00091387f9863c6ce8b018e27c72e7cc0fb89429cf365de14cb242c681bdff",
+      "archive_member": "lt_camera_v1/scm_5_green/scm_5_green.csv",
+      "crc32": 361488051,
+      "uncompressed_bytes": 2896276,
+      "compressed_bytes": 497959
+    },
+    "raw/scm_5_blue.csv": {
+      "sha256": "c8e71cfb8c3d460da672c9cbec03cfeb372b93bcbcdd95c34bd48e61c53edd4f",
+      "archive_member": "lt_camera_v1/scm_5_blue/scm_5_blue.csv",
+      "crc32": 149646416,
+      "uncompressed_bytes": 2919591,
+      "compressed_bytes": 505469
+    }
+  },
+  "integrity_note": "HTTPS, immutable source revisions, archive If-Match, member CRC32 and local SHA256; full-archive MD5 not checked because images were not downloaded"
+}

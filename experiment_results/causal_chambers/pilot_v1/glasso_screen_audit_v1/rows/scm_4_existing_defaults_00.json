@@ -1,0 +1,24 @@
+{
+  "constant": 0.125,
+  "alpha": 0.0018967839117314332,
+  "solver": "existing_defaults",
+  "reference_input_sha256": "c193b82d85c0bc70159e336d91fd1bfa1d4878c5025b30c5050300ba550b29b9",
+  "status": "failed",
+  "exception_type": "FloatingPointError",
+  "error": "Non SPD result: the system is too ill-conditioned for this solver. The system is too ill-conditioned for this solver",
+  "warning_counts": {
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 0.005136824802121076, tolerance: 0.0006020883345476757": 1,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 0.011299927700313628, tolerance: 0.0002884534102456218": 1,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 0.016923239805167967, tolerance: 0.0005346200623450011": 1,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 0.0012102826718418669, tolerance: 0.000561721626444843": 1,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 0.0380365615603897, tolerance: 0.0005366419701665616": 1,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 0.00874745871359206, tolerance: 0.000549564441799681": 1,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 0.03742007184686802, tolerance: 0.0005244922180879289": 1,
+    "ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 0.08641983348146587, tolerance: 0.0005215517974378187": 1
+  },
+  "convergence_warning_count": 8,
+  "numerically_clean": false,
+  "seconds": 0.0014667499999998501,
+  "configuration": "scm_4",
+  "design_sha256": "fd0fcff8d4f22392c2f5d314c8c34d034e57ba2bc5598d68856248451d3b5286"
+}
