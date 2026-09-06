@@ -1,0 +1,2069 @@
+{
+  "version": 3,
+  "profile": "scm4_unknown_oracle_1h_v1",
+  "role": "controlled_physical_hybrid_pilot_not_biological_validation",
+  "configurations": {
+    "scm_4": {
+      "data": {
+        "version": 1,
+        "configuration": "scm_4",
+        "nodes": [
+          "red",
+          "green",
+          "blue",
+          "current",
+          "ir_1",
+          "vis_1",
+          "ir_2",
+          "vis_2",
+          "ir_3",
+          "vis_3"
+        ],
+        "environments": [
+          "reference",
+          "red",
+          "green",
+          "blue"
+        ],
+        "sample_sizes": [
+          10000,
+          10000,
+          10000,
+          10000
+        ],
+        "total_samples": 40000,
+        "reference_dag": [
+          [
+            0,
+            1,
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            0,
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "physical_edges": [
+          [
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "programmed_edges": [
+          [
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "documented_targets": [
+          [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "fixed_omitted_parents": {
+          "osr_c": 1.0,
+          "v_c": 5.0,
+          "l_11": 0.0,
+          "l_12": 0.0,
+          "diode_ir_1": 2.0,
+          "t_ir_1": 3.0,
+          "diode_vis_1": 1.0,
+          "t_vis_1": 3.0,
+          "l_21": 0.0,
+          "l_22": 0.0,
+          "diode_ir_2": 2.0,
+          "t_ir_2": 3.0,
+          "diode_vis_2": 1.0,
+          "t_vis_2": 3.0,
+          "pol_1": 0.0,
+          "pol_2": 0.0,
+          "l_31": 0.0,
+          "l_32": 0.0,
+          "diode_ir_3": 2.0,
+          "t_ir_3": 3.0,
+          "diode_vis_3": 1.0,
+          "t_vis_3": 3.0
+        },
+        "reference_mean": [
+          96.0091,
+          91.3926,
+          91.8086,
+          94.328,
+          24462.0361,
+          6856.1367,
+          3577.8528,
+          1014.8996,
+          1112.5264,
+          299.5608
+        ],
+        "reference_sd": [
+          23.008481418598663,
+          14.715986723288385,
+          13.898933989338895,
+          9.8363619290874,
+          5654.956639868849,
+          1440.2749489639505,
+          822.018887697941,
+          212.13768246080184,
+          260.41378285920274,
+          64.8196243691677
+        ],
+        "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+        "source_sha256": "bf2beadc3331b77cb487af080bf3dc90499445e24604035e87afb4638ce35a0c",
+        "preparation_code_sha256": "b4bab3249cd3e81507d203c2ae28eda8ea3dfa9d0a6e3a0afdf51aa66e86bad5",
+        "transformation": "common_reference_affine_no_rank_transform_no_filtering",
+        "files": {
+          "scm_4/arrays.npz": {
+            "sha256": "2d3e2aa3cc0a6d1f7c6d5d3012989cd5690718e2cb3fff5c497394f406ffbbeb"
+          },
+          "scm_4/bounds.json": {
+            "sha256": "cef91c61be6cd46f8088f711ef7ba3a6075b571c353b61487b6063eabf85a198"
+          },
+          "scm_4/diagnostics.json": {
+            "sha256": "955f06d118cd60784ad868817456eaa5e23067b1b65de2a9e910e1b6d9a661e2"
+          }
+        }
+      },
+      "preflight": {
+        "bounds": {
+          "gamma_lower": 1e-05,
+          "gamma_upper": 89.39484844716586,
+          "coefficient_bound": 87.16218669853644
+        },
+        "min_diagonal": 0.9836910395906382,
+        "max_diagonal": 8.939484844716585,
+        "max_abs_coefficient": 8.716218669853644,
+        "coefficient_witness": {
+          "node": 2,
+          "parents": [
+            0,
+            1
+          ],
+          "mask": 7
+        },
+        "local_optima_checked": 40960,
+        "parent_sets": 5120,
+        "target_masks_per_parent_set": 8,
+        "input_sha256": "a24a189c65ab9c5e0003ab3023f0b6fd20e818e39f4d7b13aae3ec641f24e95b",
+        "rule": "all local optima, tenfold margin, retain looser existing bounds"
+      }
+    }
+  },
+  "jobs": [
+    {
+      "index": 0,
+      "configuration": "scm_4",
+      "method": "ps_mip_unknown",
+      "setting_index": 0,
+      "setting": {
+        "setting_id": "graph_00_target_fixed16",
+        "tuning_value": 0.0625,
+        "graph_penalty": 1.6557241770462612e-05,
+        "target_penalty": [
+          0.004238653893238429,
+          0.004238653893238429,
+          0.004238653893238429
+        ],
+        "target_penalty_formula": "16*log(N)/N",
+        "environment_weights": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ]
+      },
+      "target_information": "intervention labels hidden as diagnostic; all indicators learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/ps_mip_unknown/setting_01.json"
+    },
+    {
+      "index": 1,
+      "configuration": "scm_4",
+      "method": "ps_mip_unknown",
+      "setting_index": 1,
+      "setting": {
+        "setting_id": "graph_01_target_fixed16",
+        "tuning_value": 0.08838834764831845,
+        "graph_penalty": 2.3415475867278544e-05,
+        "target_penalty": [
+          0.004238653893238429,
+          0.004238653893238429,
+          0.004238653893238429
+        ],
+        "target_penalty_formula": "16*log(N)/N",
+        "environment_weights": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ]
+      },
+      "target_information": "intervention labels hidden as diagnostic; all indicators learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/ps_mip_unknown/setting_02.json"
+    },
+    {
+      "index": 2,
+      "configuration": "scm_4",
+      "method": "ps_mip_unknown",
+      "setting_index": 2,
+      "setting": {
+        "setting_id": "graph_02_target_fixed16",
+        "tuning_value": 0.125,
+        "graph_penalty": 3.3114483540925225e-05,
+        "target_penalty": [
+          0.004238653893238429,
+          0.004238653893238429,
+          0.004238653893238429
+        ],
+        "target_penalty_formula": "16*log(N)/N",
+        "environment_weights": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ]
+      },
+      "target_information": "intervention labels hidden as diagnostic; all indicators learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/ps_mip_unknown/setting_03.json"
+    },
+    {
+      "index": 3,
+      "configuration": "scm_4",
+      "method": "ps_mip_unknown",
+      "setting_index": 3,
+      "setting": {
+        "setting_id": "graph_03_target_fixed16",
+        "tuning_value": 0.1767766952966369,
+        "graph_penalty": 4.683095173455709e-05,
+        "target_penalty": [
+          0.004238653893238429,
+          0.004238653893238429,
+          0.004238653893238429
+        ],
+        "target_penalty_formula": "16*log(N)/N",
+        "environment_weights": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ]
+      },
+      "target_information": "intervention labels hidden as diagnostic; all indicators learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/ps_mip_unknown/setting_04.json"
+    },
+    {
+      "index": 4,
+      "configuration": "scm_4",
+      "method": "ps_mip_unknown",
+      "setting_index": 4,
+      "setting": {
+        "setting_id": "graph_04_target_fixed16",
+        "tuning_value": 0.25,
+        "graph_penalty": 6.622896708185045e-05,
+        "target_penalty": [
+          0.004238653893238429,
+          0.004238653893238429,
+          0.004238653893238429
+        ],
+        "target_penalty_formula": "16*log(N)/N",
+        "environment_weights": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ]
+      },
+      "target_information": "intervention labels hidden as diagnostic; all indicators learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/ps_mip_unknown/setting_05.json"
+    },
+    {
+      "index": 5,
+      "configuration": "scm_4",
+      "method": "ps_mip_unknown",
+      "setting_index": 5,
+      "setting": {
+        "setting_id": "graph_05_target_fixed16",
+        "tuning_value": 0.3535533905932738,
+        "graph_penalty": 9.366190346911417e-05,
+        "target_penalty": [
+          0.004238653893238429,
+          0.004238653893238429,
+          0.004238653893238429
+        ],
+        "target_penalty_formula": "16*log(N)/N",
+        "environment_weights": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ]
+      },
+      "target_information": "intervention labels hidden as diagnostic; all indicators learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/ps_mip_unknown/setting_06.json"
+    },
+    {
+      "index": 6,
+      "configuration": "scm_4",
+      "method": "ps_mip_unknown",
+      "setting_index": 6,
+      "setting": {
+        "setting_id": "graph_06_target_fixed16",
+        "tuning_value": 0.5,
+        "graph_penalty": 0.0001324579341637009,
+        "target_penalty": [
+          0.004238653893238429,
+          0.004238653893238429,
+          0.004238653893238429
+        ],
+        "target_penalty_formula": "16*log(N)/N",
+        "environment_weights": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ]
+      },
+      "target_information": "intervention labels hidden as diagnostic; all indicators learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/ps_mip_unknown/setting_07.json"
+    },
+    {
+      "index": 7,
+      "configuration": "scm_4",
+      "method": "ps_mip_unknown",
+      "setting_index": 7,
+      "setting": {
+        "setting_id": "graph_07_target_fixed16",
+        "tuning_value": 0.7071067811865476,
+        "graph_penalty": 0.00018732380693822835,
+        "target_penalty": [
+          0.004238653893238429,
+          0.004238653893238429,
+          0.004238653893238429
+        ],
+        "target_penalty_formula": "16*log(N)/N",
+        "environment_weights": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ]
+      },
+      "target_information": "intervention labels hidden as diagnostic; all indicators learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/ps_mip_unknown/setting_08.json"
+    },
+    {
+      "index": 8,
+      "configuration": "scm_4",
+      "method": "ps_mip_unknown",
+      "setting_index": 8,
+      "setting": {
+        "setting_id": "graph_08_target_fixed16",
+        "tuning_value": 1.0,
+        "graph_penalty": 0.0002649158683274018,
+        "target_penalty": [
+          0.004238653893238429,
+          0.004238653893238429,
+          0.004238653893238429
+        ],
+        "target_penalty_formula": "16*log(N)/N",
+        "environment_weights": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ]
+      },
+      "target_information": "intervention labels hidden as diagnostic; all indicators learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/ps_mip_unknown/setting_09.json"
+    },
+    {
+      "index": 9,
+      "configuration": "scm_4",
+      "method": "ps_mip_unknown",
+      "setting_index": 9,
+      "setting": {
+        "setting_id": "graph_09_target_fixed16",
+        "tuning_value": 1.4142135623730951,
+        "graph_penalty": 0.0003746476138764567,
+        "target_penalty": [
+          0.004238653893238429,
+          0.004238653893238429,
+          0.004238653893238429
+        ],
+        "target_penalty_formula": "16*log(N)/N",
+        "environment_weights": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ]
+      },
+      "target_information": "intervention labels hidden as diagnostic; all indicators learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/ps_mip_unknown/setting_10.json"
+    },
+    {
+      "index": 10,
+      "configuration": "scm_4",
+      "method": "ps_mip_unknown",
+      "setting_index": 10,
+      "setting": {
+        "setting_id": "graph_10_target_fixed16",
+        "tuning_value": 2.0,
+        "graph_penalty": 0.0005298317366548036,
+        "target_penalty": [
+          0.004238653893238429,
+          0.004238653893238429,
+          0.004238653893238429
+        ],
+        "target_penalty_formula": "16*log(N)/N",
+        "environment_weights": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ]
+      },
+      "target_information": "intervention labels hidden as diagnostic; all indicators learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/ps_mip_unknown/setting_11.json"
+    },
+    {
+      "index": 11,
+      "configuration": "scm_4",
+      "method": "ps_mip_unknown",
+      "setting_index": 11,
+      "setting": {
+        "setting_id": "graph_11_target_fixed16",
+        "tuning_value": 2.8284271247461903,
+        "graph_penalty": 0.0007492952277529134,
+        "target_penalty": [
+          0.004238653893238429,
+          0.004238653893238429,
+          0.004238653893238429
+        ],
+        "target_penalty_formula": "16*log(N)/N",
+        "environment_weights": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ]
+      },
+      "target_information": "intervention labels hidden as diagnostic; all indicators learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/ps_mip_unknown/setting_12.json"
+    },
+    {
+      "index": 12,
+      "configuration": "scm_4",
+      "method": "ps_mip_unknown",
+      "setting_index": 12,
+      "setting": {
+        "setting_id": "graph_12_target_fixed16",
+        "tuning_value": 4.0,
+        "graph_penalty": 0.0010596634733096072,
+        "target_penalty": [
+          0.004238653893238429,
+          0.004238653893238429,
+          0.004238653893238429
+        ],
+        "target_penalty_formula": "16*log(N)/N",
+        "environment_weights": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ]
+      },
+      "target_information": "intervention labels hidden as diagnostic; all indicators learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/ps_mip_unknown/setting_13.json"
+    },
+    {
+      "index": 13,
+      "configuration": "scm_4",
+      "method": "ps_mip_unknown",
+      "setting_index": 13,
+      "setting": {
+        "setting_id": "graph_13_target_fixed16",
+        "tuning_value": 5.656854249492381,
+        "graph_penalty": 0.0014985904555058268,
+        "target_penalty": [
+          0.004238653893238429,
+          0.004238653893238429,
+          0.004238653893238429
+        ],
+        "target_penalty_formula": "16*log(N)/N",
+        "environment_weights": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ]
+      },
+      "target_information": "intervention labels hidden as diagnostic; all indicators learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/ps_mip_unknown/setting_14.json"
+    },
+    {
+      "index": 14,
+      "configuration": "scm_4",
+      "method": "ps_mip_unknown",
+      "setting_index": 14,
+      "setting": {
+        "setting_id": "graph_14_target_fixed16",
+        "tuning_value": 8.0,
+        "graph_penalty": 0.0021193269466192144,
+        "target_penalty": [
+          0.004238653893238429,
+          0.004238653893238429,
+          0.004238653893238429
+        ],
+        "target_penalty_formula": "16*log(N)/N",
+        "environment_weights": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ]
+      },
+      "target_information": "intervention labels hidden as diagnostic; all indicators learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/ps_mip_unknown/setting_15.json"
+    },
+    {
+      "index": 15,
+      "configuration": "scm_4",
+      "method": "ps_mip_unknown",
+      "setting_index": 15,
+      "setting": {
+        "setting_id": "graph_15_target_fixed16",
+        "tuning_value": 11.313708498984761,
+        "graph_penalty": 0.0029971809110116536,
+        "target_penalty": [
+          0.004238653893238429,
+          0.004238653893238429,
+          0.004238653893238429
+        ],
+        "target_penalty_formula": "16*log(N)/N",
+        "environment_weights": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ]
+      },
+      "target_information": "intervention labels hidden as diagnostic; all indicators learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/ps_mip_unknown/setting_16.json"
+    },
+    {
+      "index": 16,
+      "configuration": "scm_4",
+      "method": "ps_mip_unknown",
+      "setting_index": 16,
+      "setting": {
+        "setting_id": "graph_16_target_fixed16",
+        "tuning_value": 16.0,
+        "graph_penalty": 0.004238653893238429,
+        "target_penalty": [
+          0.004238653893238429,
+          0.004238653893238429,
+          0.004238653893238429
+        ],
+        "target_penalty_formula": "16*log(N)/N",
+        "environment_weights": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ]
+      },
+      "target_information": "intervention labels hidden as diagnostic; all indicators learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/ps_mip_unknown/setting_17.json"
+    },
+    {
+      "index": 17,
+      "configuration": "scm_4",
+      "method": "gies_oracle",
+      "setting_index": 0,
+      "setting": {
+        "setting_id": "native_bic_00",
+        "tuning_value": 0.0625,
+        "lambda": 0.33114483540925227
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gies_oracle/setting_01.json"
+    },
+    {
+      "index": 18,
+      "configuration": "scm_4",
+      "method": "gies_oracle",
+      "setting_index": 1,
+      "setting": {
+        "setting_id": "native_bic_01",
+        "tuning_value": 0.125,
+        "lambda": 0.6622896708185045
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gies_oracle/setting_02.json"
+    },
+    {
+      "index": 19,
+      "configuration": "scm_4",
+      "method": "gies_oracle",
+      "setting_index": 2,
+      "setting": {
+        "setting_id": "native_bic_02",
+        "tuning_value": 0.25,
+        "lambda": 1.324579341637009
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gies_oracle/setting_03.json"
+    },
+    {
+      "index": 20,
+      "configuration": "scm_4",
+      "method": "gies_oracle",
+      "setting_index": 3,
+      "setting": {
+        "setting_id": "native_bic_03",
+        "tuning_value": 0.5,
+        "lambda": 2.649158683274018
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gies_oracle/setting_04.json"
+    },
+    {
+      "index": 21,
+      "configuration": "scm_4",
+      "method": "gies_oracle",
+      "setting_index": 4,
+      "setting": {
+        "setting_id": "native_bic_04",
+        "tuning_value": 1.0,
+        "lambda": 5.298317366548036
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gies_oracle/setting_05.json"
+    },
+    {
+      "index": 22,
+      "configuration": "scm_4",
+      "method": "gies_oracle",
+      "setting_index": 5,
+      "setting": {
+        "setting_id": "native_bic_05",
+        "tuning_value": 2.0,
+        "lambda": 10.596634733096073
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gies_oracle/setting_06.json"
+    },
+    {
+      "index": 23,
+      "configuration": "scm_4",
+      "method": "gies_oracle",
+      "setting_index": 6,
+      "setting": {
+        "setting_id": "native_bic_06",
+        "tuning_value": 4.0,
+        "lambda": 21.193269466192145
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gies_oracle/setting_07.json"
+    },
+    {
+      "index": 24,
+      "configuration": "scm_4",
+      "method": "gies_oracle",
+      "setting_index": 7,
+      "setting": {
+        "setting_id": "native_bic_07",
+        "tuning_value": 8.0,
+        "lambda": 42.38653893238429
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gies_oracle/setting_08.json"
+    },
+    {
+      "index": 25,
+      "configuration": "scm_4",
+      "method": "gies_oracle",
+      "setting_index": 8,
+      "setting": {
+        "setting_id": "native_bic_08",
+        "tuning_value": 16.0,
+        "lambda": 84.77307786476858
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gies_oracle/setting_09.json"
+    },
+    {
+      "index": 26,
+      "configuration": "scm_4",
+      "method": "gies_oracle",
+      "setting_index": 9,
+      "setting": {
+        "setting_id": "native_bic_09",
+        "tuning_value": 32.0,
+        "lambda": 169.54615572953716
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gies_oracle/setting_10.json"
+    },
+    {
+      "index": 27,
+      "configuration": "scm_4",
+      "method": "gies_oracle",
+      "setting_index": 10,
+      "setting": {
+        "setting_id": "native_bic_10",
+        "tuning_value": 64.0,
+        "lambda": 339.0923114590743
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gies_oracle/setting_11.json"
+    },
+    {
+      "index": 28,
+      "configuration": "scm_4",
+      "method": "gies_oracle",
+      "setting_index": 11,
+      "setting": {
+        "setting_id": "native_bic_11",
+        "tuning_value": 128.0,
+        "lambda": 678.1846229181486
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gies_oracle/setting_12.json"
+    },
+    {
+      "index": 29,
+      "configuration": "scm_4",
+      "method": "gies_oracle",
+      "setting_index": 12,
+      "setting": {
+        "setting_id": "native_bic_12",
+        "tuning_value": 256.0,
+        "lambda": 1356.3692458362973
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gies_oracle/setting_13.json"
+    },
+    {
+      "index": 30,
+      "configuration": "scm_4",
+      "method": "gies_oracle",
+      "setting_index": 13,
+      "setting": {
+        "setting_id": "native_bic_13",
+        "tuning_value": 512.0,
+        "lambda": 2712.7384916725946
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gies_oracle/setting_14.json"
+    },
+    {
+      "index": 31,
+      "configuration": "scm_4",
+      "method": "gies_oracle",
+      "setting_index": 14,
+      "setting": {
+        "setting_id": "native_bic_14",
+        "tuning_value": 1024.0,
+        "lambda": 5425.476983345189
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gies_oracle/setting_15.json"
+    },
+    {
+      "index": 32,
+      "configuration": "scm_4",
+      "method": "utigsp_unknown",
+      "setting_index": 0,
+      "setting": {
+        "setting_id": "alpha_00",
+        "tuning_value": 0.001,
+        "alpha": 0.001,
+        "alpha_inv": 1e-05,
+        "invariance_test": "gaussian",
+        "depth": 4,
+        "nruns": 10
+      },
+      "target_information": "no intervention targets supplied; environment-specific targets learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/utigsp_unknown/setting_01.json"
+    },
+    {
+      "index": 33,
+      "configuration": "scm_4",
+      "method": "utigsp_unknown",
+      "setting_index": 1,
+      "setting": {
+        "setting_id": "alpha_01",
+        "tuning_value": 0.01,
+        "alpha": 0.01,
+        "alpha_inv": 1e-05,
+        "invariance_test": "gaussian",
+        "depth": 4,
+        "nruns": 10
+      },
+      "target_information": "no intervention targets supplied; environment-specific targets learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/utigsp_unknown/setting_02.json"
+    },
+    {
+      "index": 34,
+      "configuration": "scm_4",
+      "method": "utigsp_unknown",
+      "setting_index": 2,
+      "setting": {
+        "setting_id": "alpha_02",
+        "tuning_value": 0.05,
+        "alpha": 0.05,
+        "alpha_inv": 1e-05,
+        "invariance_test": "gaussian",
+        "depth": 4,
+        "nruns": 10
+      },
+      "target_information": "no intervention targets supplied; environment-specific targets learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/utigsp_unknown/setting_03.json"
+    },
+    {
+      "index": 35,
+      "configuration": "scm_4",
+      "method": "utigsp_unknown",
+      "setting_index": 3,
+      "setting": {
+        "setting_id": "alpha_03",
+        "tuning_value": 0.1,
+        "alpha": 0.1,
+        "alpha_inv": 1e-05,
+        "invariance_test": "gaussian",
+        "depth": 4,
+        "nruns": 10
+      },
+      "target_information": "no intervention targets supplied; environment-specific targets learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/utigsp_unknown/setting_04.json"
+    },
+    {
+      "index": 36,
+      "configuration": "scm_4",
+      "method": "utigsp_unknown",
+      "setting_index": 4,
+      "setting": {
+        "setting_id": "alpha_04",
+        "tuning_value": 0.2,
+        "alpha": 0.2,
+        "alpha_inv": 1e-05,
+        "invariance_test": "gaussian",
+        "depth": 4,
+        "nruns": 10
+      },
+      "target_information": "no intervention targets supplied; environment-specific targets learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/utigsp_unknown/setting_05.json"
+    },
+    {
+      "index": 37,
+      "configuration": "scm_4",
+      "method": "utigsp_unknown",
+      "setting_index": 5,
+      "setting": {
+        "setting_id": "alpha_05",
+        "tuning_value": 0.3,
+        "alpha": 0.3,
+        "alpha_inv": 1e-05,
+        "invariance_test": "gaussian",
+        "depth": 4,
+        "nruns": 10
+      },
+      "target_information": "no intervention targets supplied; environment-specific targets learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/utigsp_unknown/setting_06.json"
+    },
+    {
+      "index": 38,
+      "configuration": "scm_4",
+      "method": "utigsp_unknown",
+      "setting_index": 6,
+      "setting": {
+        "setting_id": "alpha_06",
+        "tuning_value": 0.4,
+        "alpha": 0.4,
+        "alpha_inv": 1e-05,
+        "invariance_test": "gaussian",
+        "depth": 4,
+        "nruns": 10
+      },
+      "target_information": "no intervention targets supplied; environment-specific targets learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/utigsp_unknown/setting_07.json"
+    },
+    {
+      "index": 39,
+      "configuration": "scm_4",
+      "method": "utigsp_unknown",
+      "setting_index": 7,
+      "setting": {
+        "setting_id": "alpha_07",
+        "tuning_value": 0.5,
+        "alpha": 0.5,
+        "alpha_inv": 1e-05,
+        "invariance_test": "gaussian",
+        "depth": 4,
+        "nruns": 10
+      },
+      "target_information": "no intervention targets supplied; environment-specific targets learnable; reference remains observational",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/utigsp_unknown/setting_08.json"
+    },
+    {
+      "index": 40,
+      "configuration": "scm_4",
+      "method": "igsp_oracle",
+      "setting_index": 0,
+      "setting": {
+        "setting_id": "alpha_00",
+        "tuning_value": 0.001,
+        "alpha": 0.001,
+        "alpha_inv": 1e-05,
+        "invariance_test": "gaussian",
+        "depth": 4,
+        "nruns": 10
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/igsp_oracle/setting_01.json"
+    },
+    {
+      "index": 41,
+      "configuration": "scm_4",
+      "method": "igsp_oracle",
+      "setting_index": 1,
+      "setting": {
+        "setting_id": "alpha_01",
+        "tuning_value": 0.01,
+        "alpha": 0.01,
+        "alpha_inv": 1e-05,
+        "invariance_test": "gaussian",
+        "depth": 4,
+        "nruns": 10
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/igsp_oracle/setting_02.json"
+    },
+    {
+      "index": 42,
+      "configuration": "scm_4",
+      "method": "igsp_oracle",
+      "setting_index": 2,
+      "setting": {
+        "setting_id": "alpha_02",
+        "tuning_value": 0.05,
+        "alpha": 0.05,
+        "alpha_inv": 1e-05,
+        "invariance_test": "gaussian",
+        "depth": 4,
+        "nruns": 10
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/igsp_oracle/setting_03.json"
+    },
+    {
+      "index": 43,
+      "configuration": "scm_4",
+      "method": "igsp_oracle",
+      "setting_index": 3,
+      "setting": {
+        "setting_id": "alpha_03",
+        "tuning_value": 0.1,
+        "alpha": 0.1,
+        "alpha_inv": 1e-05,
+        "invariance_test": "gaussian",
+        "depth": 4,
+        "nruns": 10
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/igsp_oracle/setting_04.json"
+    },
+    {
+      "index": 44,
+      "configuration": "scm_4",
+      "method": "igsp_oracle",
+      "setting_index": 4,
+      "setting": {
+        "setting_id": "alpha_04",
+        "tuning_value": 0.2,
+        "alpha": 0.2,
+        "alpha_inv": 1e-05,
+        "invariance_test": "gaussian",
+        "depth": 4,
+        "nruns": 10
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/igsp_oracle/setting_05.json"
+    },
+    {
+      "index": 45,
+      "configuration": "scm_4",
+      "method": "igsp_oracle",
+      "setting_index": 5,
+      "setting": {
+        "setting_id": "alpha_05",
+        "tuning_value": 0.3,
+        "alpha": 0.3,
+        "alpha_inv": 1e-05,
+        "invariance_test": "gaussian",
+        "depth": 4,
+        "nruns": 10
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/igsp_oracle/setting_06.json"
+    },
+    {
+      "index": 46,
+      "configuration": "scm_4",
+      "method": "igsp_oracle",
+      "setting_index": 6,
+      "setting": {
+        "setting_id": "alpha_06",
+        "tuning_value": 0.4,
+        "alpha": 0.4,
+        "alpha_inv": 1e-05,
+        "invariance_test": "gaussian",
+        "depth": 4,
+        "nruns": 10
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/igsp_oracle/setting_07.json"
+    },
+    {
+      "index": 47,
+      "configuration": "scm_4",
+      "method": "igsp_oracle",
+      "setting_index": 7,
+      "setting": {
+        "setting_id": "alpha_07",
+        "tuning_value": 0.5,
+        "alpha": 0.5,
+        "alpha_inv": 1e-05,
+        "invariance_test": "gaussian",
+        "depth": 4,
+        "nruns": 10
+      },
+      "target_information": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/igsp_oracle/setting_08.json"
+    },
+    {
+      "index": 48,
+      "configuration": "scm_4",
+      "method": "gnies_unknown",
+      "setting_index": 0,
+      "setting": {
+        "setting_id": "native_bic_00",
+        "tuning_value": 0.0625,
+        "lambda": 0.33114483540925227
+      },
+      "target_information": "no intervention targets or initial union supplied; target union learnable",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gnies_unknown/setting_01.json"
+    },
+    {
+      "index": 49,
+      "configuration": "scm_4",
+      "method": "gnies_unknown",
+      "setting_index": 1,
+      "setting": {
+        "setting_id": "native_bic_01",
+        "tuning_value": 0.125,
+        "lambda": 0.6622896708185045
+      },
+      "target_information": "no intervention targets or initial union supplied; target union learnable",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gnies_unknown/setting_02.json"
+    },
+    {
+      "index": 50,
+      "configuration": "scm_4",
+      "method": "gnies_unknown",
+      "setting_index": 2,
+      "setting": {
+        "setting_id": "native_bic_02",
+        "tuning_value": 0.25,
+        "lambda": 1.324579341637009
+      },
+      "target_information": "no intervention targets or initial union supplied; target union learnable",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gnies_unknown/setting_03.json"
+    },
+    {
+      "index": 51,
+      "configuration": "scm_4",
+      "method": "gnies_unknown",
+      "setting_index": 3,
+      "setting": {
+        "setting_id": "native_bic_03",
+        "tuning_value": 0.5,
+        "lambda": 2.649158683274018
+      },
+      "target_information": "no intervention targets or initial union supplied; target union learnable",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gnies_unknown/setting_04.json"
+    },
+    {
+      "index": 52,
+      "configuration": "scm_4",
+      "method": "gnies_unknown",
+      "setting_index": 4,
+      "setting": {
+        "setting_id": "native_bic_04",
+        "tuning_value": 1.0,
+        "lambda": 5.298317366548036
+      },
+      "target_information": "no intervention targets or initial union supplied; target union learnable",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gnies_unknown/setting_05.json"
+    },
+    {
+      "index": 53,
+      "configuration": "scm_4",
+      "method": "gnies_unknown",
+      "setting_index": 5,
+      "setting": {
+        "setting_id": "native_bic_05",
+        "tuning_value": 2.0,
+        "lambda": 10.596634733096073
+      },
+      "target_information": "no intervention targets or initial union supplied; target union learnable",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gnies_unknown/setting_06.json"
+    },
+    {
+      "index": 54,
+      "configuration": "scm_4",
+      "method": "gnies_unknown",
+      "setting_index": 6,
+      "setting": {
+        "setting_id": "native_bic_06",
+        "tuning_value": 4.0,
+        "lambda": 21.193269466192145
+      },
+      "target_information": "no intervention targets or initial union supplied; target union learnable",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gnies_unknown/setting_07.json"
+    },
+    {
+      "index": 55,
+      "configuration": "scm_4",
+      "method": "gnies_unknown",
+      "setting_index": 7,
+      "setting": {
+        "setting_id": "native_bic_07",
+        "tuning_value": 8.0,
+        "lambda": 42.38653893238429
+      },
+      "target_information": "no intervention targets or initial union supplied; target union learnable",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gnies_unknown/setting_08.json"
+    },
+    {
+      "index": 56,
+      "configuration": "scm_4",
+      "method": "gnies_unknown",
+      "setting_index": 8,
+      "setting": {
+        "setting_id": "native_bic_08",
+        "tuning_value": 16.0,
+        "lambda": 84.77307786476858
+      },
+      "target_information": "no intervention targets or initial union supplied; target union learnable",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gnies_unknown/setting_09.json"
+    },
+    {
+      "index": 57,
+      "configuration": "scm_4",
+      "method": "gnies_unknown",
+      "setting_index": 9,
+      "setting": {
+        "setting_id": "native_bic_09",
+        "tuning_value": 32.0,
+        "lambda": 169.54615572953716
+      },
+      "target_information": "no intervention targets or initial union supplied; target union learnable",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gnies_unknown/setting_10.json"
+    },
+    {
+      "index": 58,
+      "configuration": "scm_4",
+      "method": "gnies_unknown",
+      "setting_index": 10,
+      "setting": {
+        "setting_id": "native_bic_10",
+        "tuning_value": 64.0,
+        "lambda": 339.0923114590743
+      },
+      "target_information": "no intervention targets or initial union supplied; target union learnable",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gnies_unknown/setting_11.json"
+    },
+    {
+      "index": 59,
+      "configuration": "scm_4",
+      "method": "gnies_unknown",
+      "setting_index": 11,
+      "setting": {
+        "setting_id": "native_bic_11",
+        "tuning_value": 128.0,
+        "lambda": 678.1846229181486
+      },
+      "target_information": "no intervention targets or initial union supplied; target union learnable",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gnies_unknown/setting_12.json"
+    },
+    {
+      "index": 60,
+      "configuration": "scm_4",
+      "method": "gnies_unknown",
+      "setting_index": 12,
+      "setting": {
+        "setting_id": "native_bic_12",
+        "tuning_value": 256.0,
+        "lambda": 1356.3692458362973
+      },
+      "target_information": "no intervention targets or initial union supplied; target union learnable",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gnies_unknown/setting_13.json"
+    },
+    {
+      "index": 61,
+      "configuration": "scm_4",
+      "method": "gnies_unknown",
+      "setting_index": 13,
+      "setting": {
+        "setting_id": "native_bic_13",
+        "tuning_value": 512.0,
+        "lambda": 2712.7384916725946
+      },
+      "target_information": "no intervention targets or initial union supplied; target union learnable",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gnies_unknown/setting_14.json"
+    },
+    {
+      "index": 62,
+      "configuration": "scm_4",
+      "method": "gnies_unknown",
+      "setting_index": 14,
+      "setting": {
+        "setting_id": "native_bic_14",
+        "tuning_value": 1024.0,
+        "lambda": 5425.476983345189
+      },
+      "target_information": "no intervention targets or initial union supplied; target union learnable",
+      "time_limit": 3600.0,
+      "data_sha256": "2fb81bf78fd18372af0e9f60876f4831dc8d2cfcd81a67f97741e50d5dff7888",
+      "output": "scm_4/parts/gnies_unknown/setting_15.json"
+    }
+  ],
+  "seed": 20260901,
+  "threads": 8,
+  "native_threads": 1,
+  "implementation": {
+    "src/chamber_data.py": "b4bab3249cd3e81507d203c2ae28eda8ea3dfa9d0a6e3a0afdf51aa66e86bad5",
+    "src/chamber_experiment.py": "d83f51950799f990cb085c73e892ec900efb68d7eb84cdfbeb20bf252ee056ef",
+    "experiments/run_chamber_experiment.py": "9569b07e4098cdd017de8789f797a0c64b698b4cb88b79d82c658ef47266e3b1",
+    "MIP_profiled.py": "9e1566b8775e0739b5dd3a6c398d0c0f3da42a638f24b20353fba0a802afd4a8",
+    "MIP.py": "b6ba5d31edf2ecb82b71eb6b590bea1ff6b6ff900c5c744742357c6b13771618",
+    "UTIGSP.py": "5116cb67002fedcae3eb9af70bda386bb8fe3c3836381ef2490f83f4bb813b8e",
+    "IGSP.py": "52bfaef09f45ec0088e9d36b4098613b1e3be08d1e22dba7c392ed2776b270d9",
+    "GIES.py": "7c6b39b9c710c905ce890572b146ba0e4001adb7e4c97f720d25bcae18b288d9",
+    "src/utils.py": "f01793e8b6d3c43caa8183bbf4fe3a1837d3de10e01d304e842bcfada449e153",
+    "src/main_experiment_cli.py": "3971c9b64c749326facfe77fdc694eb06820184553dc6cd40d233b6c6782e5e2",
+    "src/main_experiment_data.py": "85ea63ea0c44b4e963aff080d4f5eaa9fea574fea655a0d6384715f7a5818496",
+    "data/DataGeneration.py": "88a15f47a24b03f731aec9123018df8bb1a90bc346e3056148fd485074e81378",
+    "requirements-chambers.txt": "dc9b4460c1ec9439b504068dafa111961edd24d543887c6c83b24f68c415b250",
+    "experiments/quest_jobs/chamber_experiment_ps_mip_unknown.sh": "971a8940b08a50fbf8dcbb196d27f1b74a721eb87e4aaf92ae3172babc832908",
+    "experiments/quest_jobs/chamber_experiment_gies_oracle.sh": "937367cd5ec547ad17828204405e5c2b52a9cf0645b72e4fc89ff52fbede4f18",
+    "experiments/quest_jobs/chamber_experiment_utigsp_unknown.sh": "9f32f2fa83a468769a67e9c77eb993ee283afb8d1afc971e5658991e6f441540",
+    "experiments/quest_jobs/chamber_experiment_igsp_oracle.sh": "f517567430bb7b918dc6dda7d5e93374726cc345a4865a676c2dbb2c51112490",
+    "experiments/quest_jobs/chamber_experiment_gnies_unknown.sh": "fb621c82225b5c6449541a4401330e79b9a0226dc86baf67b4bdc3c363912491"
+  },
+  "runtime": {
+    "python": "3.9.5",
+    "distribution_identity": "f9d7ca67d1307ed8633f6b467e7f2a16296312a2836856adbe297ea30bf09378",
+    "versions": {
+      "Babel": "2.15.0",
+      "CausalDisco": "0.2.0",
+      "Cython": "3.0.11",
+      "GPUtil": "1.4.0",
+      "Jinja2": "3.1.2",
+      "MarkupSafe": "2.1.3",
+      "Mastodon.py": "1.5.1",
+      "Mosek": "10.2.8",
+      "Pillow": "9.2.0",
+      "PySocks": "1.7.1",
+      "PyYAML": "6.0.1",
+      "Pygments": "2.17.2",
+      "QtPy": "2.4.1",
+      "SQLAlchemy": "1.4.40",
+      "SecretStorage": "3.3.3",
+      "Send2Trash": "1.8.3",
+      "Sphinx": "5.1.1",
+      "absl-py": "2.1.0",
+      "alabaster": "0.7.12",
+      "anyio": "4.3.0",
+      "appnope": "0.1.4",
+      "argon2-cffi": "23.1.0",
+      "argon2-cffi-bindings": "21.2.0",
+      "arrow": "1.3.0",
+      "asttokens": "2.4.1",
+      "async-lru": "2.0.4",
+      "attrs": "23.2.0",
+      "backcall": "0.2.0",
+      "backports.tarfile": "1.2.0",
+      "beautifulsoup4": "4.12.3",
+      "bleach": "6.1.0",
+      "blurhash": "1.1.4",
+      "bnlearn": "0.8.9",
+      "boost": "0.1",
+      "brotlipy": "0.7.0",
+      "causalchamber": "0.1.1",
+      "causaldag": "0.1a163",
+      "cdt": "0.6.0",
+      "certifi": "2024.2.2",
+      "cffi": "1.16.0",
+      "chardet": "4.0.0",
+      "charset-normalizer": "3.3.2",
+      "clarabel": "0.6.0",
+      "comm": "0.2.2",
+      "conda": "4.13.0",
+      "conda-package-handling": "1.7.3",
+      "conditional-independence": "0.1a6",
+      "contourpy": "1.2.0",
+      "cryptography": "45.0.5",
+      "cvxopt": "1.3.2",
+      "cvxpy": "1.6.0",
+      "cycler": "0.11.0",
+      "dagma": "1.1.1",
+      "dataclasses": "0.6",
+      "datazets": "0.1.9",
+      "debugpy": "1.8.1",
+      "decorator": "5.1.1",
+      "defusedxml": "0.7.1",
+      "df2onehot": "1.0.7",
+      "docutils": "0.21.2",
+      "ecos": "2.0.12",
+      "einops": "0.7.0",
+      "exceptiongroup": "1.2.0",
+      "executing": "2.0.1",
+      "fastjsonschema": "2.19.1",
+      "filelock": "3.13.1",
+      "fonttools": "4.47.0",
+      "fqdn": "1.5.1",
+      "frozendict": "2.4.0",
+      "fsspec": "2023.12.2",
+      "funcsigs": "1.0.2",
+      "future": "0.18.2",
+      "ges": "1.1.0",
+      "gies": "0.0.3",
+      "gnies": "0.3.3",
+      "graphical-model-learning": "0.1a8",
+      "graphical-models": "0.1a19",
+      "greenlet": "1.1.2",
+      "gsq": "0.1.6",
+      "gurobipy": "12.0.3",
+      "h11": "0.14.0",
+      "httpcore": "1.0.5",
+      "httpx": "0.27.0",
+      "idna": "3.7",
+      "igraph": "0.11.9",
+      "imagesize": "1.4.1",
+      "immutabledict": "4.2.0",
+      "importlib-metadata": "4.12.0",
+      "importlib-resources": "6.1.1",
+      "importlib_metadata": "7.1.0",
+      "ipdb": "0.13.13",
+      "ipykernel": "6.29.4",
+      "ipython": "8.4.0",
+      "ipywidgets": "8.1.2",
+      "ismember": "1.0.5",
+      "isoduration": "20.11.0",
+      "jaraco.classes": "3.4.0",
+      "jaraco.context": "5.3.0",
+      "jaraco.functools": "4.0.1",
+      "jax": "0.4.30",
+      "jaxlib": "0.4.30",
+      "jedi": "0.19.1",
+      "jeepney": "0.9.0",
+      "joblib": "1.3.2",
+      "json5": "0.9.25",
+      "jsonpointer": "2.4",
+      "jsonschema": "4.22.0",
+      "jsonschema-specifications": "2023.12.1",
+      "jupyter": "1.1.1",
+      "jupyter-console": "6.6.3",
+      "jupyter-events": "0.10.0",
+      "jupyter-lsp": "2.2.5",
+      "jupyter_client": "8.6.2",
+      "jupyter_core": "5.7.2",
+      "jupyter_server": "2.14.0",
+      "jupyter_server_terminals": "0.5.3",
+      "jupyterlab": "4.2.1",
+      "jupyterlab_pygments": "0.3.0",
+      "jupyterlab_server": "2.27.2",
+      "jupyterlab_widgets": "3.0.10",
+      "keyring": "25.2.1",
+      "kiwisolver": "1.4.5",
+      "l0bnb": "1.0.0",
+      "l0learn": "0.4.3",
+      "llvmlite": "0.42.0",
+      "loguru": "0.6.0",
+      "markdown-it-py": "3.0.0",
+      "matplotlib": "3.8.2",
+      "matplotlib-inline": "0.1.6",
+      "mdurl": "0.1.2",
+      "micodag": "0.0.8",
+      "mistune": "3.0.2",
+      "ml_dtypes": "0.5.4",
+      "more-itertools": "10.3.0",
+      "mpi4py": "3.1.3",
+      "mpmath": "1.3.0",
+      "nbclient": "0.10.0",
+      "nbconvert": "7.16.4",
+      "nbformat": "5.10.4",
+      "nest-asyncio": "1.6.0",
+      "networkx": "3.2.1",
+      "nh3": "0.2.18",
+      "notebook": "7.2.0",
+      "notebook_shim": "0.2.4",
+      "numba": "0.59.0",
+      "numexpr": "2.8.8",
+      "numpy": "1.26.3",
+      "nvidia-cublas-cu12": "12.1.3.1",
+      "nvidia-cuda-cupti-cu12": "12.1.105",
+      "nvidia-cuda-nvrtc-cu12": "12.1.105",
+      "nvidia-cuda-runtime-cu12": "12.1.105",
+      "nvidia-cudnn-cu12": "8.9.2.26",
+      "nvidia-cufft-cu12": "11.0.2.54",
+      "nvidia-cufile-cu12": "1.11.1.6",
+      "nvidia-curand-cu12": "10.3.2.106",
+      "nvidia-cusolver-cu12": "11.4.5.107",
+      "nvidia-cusparse-cu12": "12.1.0.106",
+      "nvidia-cusparselt-cu12": "0.6.3",
+      "nvidia-nccl-cu12": "2.18.1",
+      "nvidia-nvjitlink-cu12": "12.6.85",
+      "nvidia-nvtx-cu12": "12.1.105",
+      "opt-einsum": "3.3.0",
+      "ortools": "9.9.3963",
+      "osqp": "0.6.3",
+      "overrides": "7.7.0",
+      "packaging": "23.2",
+      "pandas": "2.1.4",
+      "pandocfilters": "1.5.1",
+      "parso": "0.8.3",
+      "pathlib2": "2.3.7.post1",
+      "patsy": "0.5.6",
+      "pcalg": "0.2.2",
+      "pexpect": "4.9.0",
+      "pgmpy": "0.1.24",
+      "pickleshare": "0.7.5",
+      "pillow": "10.2.0",
+      "pip": "21.1.3",
+      "pkginfo": "1.10.0",
+      "platformdirs": "4.2.2",
+      "progressbar2": "4.3.2",
+      "prometheus_client": "0.20.0",
+      "prompt-toolkit": "3.0.43",
+      "protobuf": "5.26.1",
+      "psutil": "5.9.8",
+      "ptyprocess": "0.7.0",
+      "pure-eval": "0.2.2",
+      "pyOpenSSL": "20.0.1",
+      "pybind11": "2.11.1",
+      "pycasso": "0.1.2.2",
+      "pycosat": "0.6.3",
+      "pycparser": "2.22",
+      "pygam": "0.9.0",
+      "pygraphviz": "1.9",
+      "pypandoc": "1.13",
+      "pyparsing": "3.1.1",
+      "pypickle": "1.1.0",
+      "pyro-api": "0.1.2",
+      "pyro-ppl": "1.9.1",
+      "python-dateutil": "2.8.2",
+      "python-igraph": "0.11.8",
+      "python-json-logger": "2.0.7",
+      "python-louvain": "0.16",
+      "python-magic": "0.4.27",
+      "python-utils": "3.8.1",
+      "pytz": "2023.3.post1",
+      "pyzmq": "26.0.3",
+      "qdldl": "0.1.7.post0",
+      "qtconsole": "5.5.2",
+      "readme_renderer": "44.0",
+      "referencing": "0.35.1",
+      "requests": "2.32.2",
+      "requests-toolbelt": "1.0.0",
+      "rfc3339-validator": "0.1.4",
+      "rfc3986": "2.0.0",
+      "rfc3986-validator": "0.1.1",
+      "rich": "13.7.1",
+      "rpds-py": "0.18.1",
+      "ruamel-yaml-conda": "0.15.100",
+      "scikit-learn": "1.3.2",
+      "scipy": "1.11.4",
+      "scs": "3.2.4.post1",
+      "seaborn": "0.13.2",
+      "sempler": "0.2.13",
+      "setuptools": "80.9.0",
+      "six": "1.16.0",
+      "skglm": "0.3.1",
+      "skrebate": "0.8.3",
+      "sniffio": "1.3.1",
+      "snowballstemmer": "2.2.0",
+      "soupsieve": "2.5",
+      "sphinxcontrib-applehelp": "1.0.2",
+      "sphinxcontrib-devhelp": "1.0.2",
+      "sphinxcontrib-htmlhelp": "2.0.0",
+      "sphinxcontrib-jsmath": "1.0.1",
+      "sphinxcontrib-qthelp": "1.0.3",
+      "sphinxcontrib-serializinghtml": "1.1.5",
+      "stack-data": "0.6.3",
+      "statsmodels": "0.14.1",
+      "sympy": "1.12",
+      "tabulate": "0.9.0",
+      "terminado": "0.18.1",
+      "texttable": "1.7.0",
+      "threadpoolctl": "3.2.0",
+      "tinycss2": "1.3.0",
+      "tomli": "2.0.1",
+      "torch": "2.1.2",
+      "tornado": "6.4",
+      "tqdm": "4.66.1",
+      "traitlets": "5.3.0",
+      "triton": "2.1.0",
+      "twine": "5.1.1",
+      "types-python-dateutil": "2.9.0.20240316",
+      "typing": "3.7.4.3",
+      "typing_extensions": "4.9.0",
+      "tzdata": "2023.4",
+      "tzlocal": "5.3.1",
+      "ucimlrepo": "0.0.7",
+      "uri-template": "1.3.0",
+      "urllib3": "1.26.6",
+      "vtk": "9.0.3",
+      "wcwidth": "0.2.5",
+      "webcolors": "1.13",
+      "webencodings": "0.5.1",
+      "websocket-client": "1.8.0",
+      "wheel": "0.36.2",
+      "widgetsnbextension": "4.0.10",
+      "xgboost": "2.0.3",
+      "xlib": "0.21",
+      "zipp": "3.8.1"
+    },
+    "package_source_hashes": {
+      "gnies": "a89d8156140a5db3f5d9c5aa6d252245457d56abbc2beba5a39e1282f4b57b8a",
+      "gies": "f31a65f62451d3aa5917a08e086bb9f121608e06b3956c425785024f80ae71d5",
+      "causaldag": "c1664e756e7c50d314266af01bdefe993d46f8a0d1ddfd04576d9067eef019a8",
+      "conditional_independence": "be0299a559e446142d20aaf5cd46634133ba4843ba391be354da305212f54c30",
+      "graphical_models": "084f426c3aeeb7f485d26183104546be969211e697d7de553be34581101fb15f"
+    }
+  },
+  "timing": {
+    "fit_limit_seconds": 3600.0,
+    "worker_watchdog_seconds": 3720.0,
+    "ps_mip_limit_scope": "native solver; startup, precomputation and saving are separate",
+    "baseline_limit_scope": "entire method adapter with interrupt timer"
+  },
+  "screening": {
+    "enabled": false,
+    "candidate_pairs": 45,
+    "parent_sets": 5120
+  },
+  "failure_statuses": [
+    "failed",
+    "timeout",
+    "watchdog_timeout",
+    "process_failed"
+  ],
+  "initialization": "fresh worker per fit; no warm starts; explicit provenance-preserving reuse allowed for unchanged PS-MIP/GIES/IGSP",
+  "selection_policy": "report all settings; FP budgets 3 and 5 descriptive only; no path promotion",
+  "evaluation": "reference DAG counts, no I-CPDAG scoring; deterministic reference-independent extensions",
+  "diagnostic_note": "all ten variables and all rows retained regardless of model diagnostics"
+}
