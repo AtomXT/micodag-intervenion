@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --account=p32811
-#SBATCH --partition=normal
+#SBATCH --partition=short
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
