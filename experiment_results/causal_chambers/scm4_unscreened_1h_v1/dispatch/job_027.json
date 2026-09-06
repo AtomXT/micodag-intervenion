@@ -1,0 +1,10 @@
+{
+  "job_index": 27,
+  "status": "ok_nonoptimal",
+  "returncode": 0,
+  "watchdog": false,
+  "worker_elapsed_seconds": 3653.5850335070863,
+  "watchdog_overrun_seconds": 0.0,
+  "slurm_job_id": "5601897",
+  "slurm_array_task_id": "11"
+}
