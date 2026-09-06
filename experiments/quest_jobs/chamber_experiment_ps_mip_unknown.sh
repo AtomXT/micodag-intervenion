@@ -27,4 +27,4 @@ python3 -B experiments/run_chamber_experiment.py \
   --methods ps_mip_unknown \
   --setting "$setting" \
   --time-limit 3600 \
-  --output-root experiment_results/causal_chambers/scm4_unscreened_1h_v1
+  --output-root experiment_results/causal_chambers/scm4_unknown_oracle_1h_v1

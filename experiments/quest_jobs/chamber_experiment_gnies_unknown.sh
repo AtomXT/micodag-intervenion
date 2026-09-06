@@ -6,9 +6,9 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --time=01:10:00
 #SBATCH --mem=16G
-#SBATCH --array=1-17%10
-#SBATCH --job-name=chamber_ps_mip_present
-#SBATCH --output=experiments/quest_jobs/outlog/chamber_ps_mip_present_%A_%a.out
+#SBATCH --array=1-15%10
+#SBATCH --job-name=chamber_gnies_unknown
+#SBATCH --output=experiments/quest_jobs/outlog/chamber_gnies_unknown_%A_%a.out
 
 set -e
 
@@ -24,7 +24,7 @@ export MPLBACKEND=Agg
 
 setting=$SLURM_ARRAY_TASK_ID
 python3 -B experiments/run_chamber_experiment.py \
-  --methods ps_mip_present \
+  --methods gnies_unknown \
   --setting "$setting" \
   --time-limit 3600 \
-  --output-root experiment_results/causal_chambers/scm4_unscreened_1h_v1
+  --output-root experiment_results/causal_chambers/scm4_unknown_oracle_1h_v1

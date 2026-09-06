@@ -6,22 +6,29 @@ import importlib.metadata
 import inspect
 import platform
 import time
+import warnings
 from pathlib import Path
 
 import numpy as np
 
 from src import chamber_data as data
 
-METHODS = ("ps_mip_complete", "ps_mip_present", "ps_mip_unknown", "utigsp_present",
-           "gnies_present", "gies_complete", "igsp_complete")
+LEGACY_METHODS = ("ps_mip_complete", "ps_mip_present", "ps_mip_unknown", "utigsp_present",
+                  "gnies_present", "gies_complete", "igsp_complete")
+METHODS = ("ps_mip_unknown", "gies_oracle", "utigsp_unknown", "igsp_oracle", "gnies_unknown")
+ALL_METHODS = tuple(dict.fromkeys((*LEGACY_METHODS, *METHODS)))
 LABELS = {
     "ps_mip_complete": "PS-MIP: complete targets",
     "ps_mip_present": "PS-MIP: known-present targets",
-    "ps_mip_unknown": "PS-MIP: hidden targets (diagnostic)",
+    "ps_mip_unknown": "PS-MIP: unknown targets",
     "utigsp_present": "UT-IGSP: targets supplied",
     "gnies_present": "GnIES: target union supplied",
     "gies_complete": "GIES: complete targets",
     "igsp_complete": "IGSP: complete targets",
+    "gies_oracle": "GIES (oracle)",
+    "utigsp_unknown": "UT-IGSP: unknown targets",
+    "igsp_oracle": "IGSP (oracle)",
+    "gnies_unknown": "GnIES: unknown targets",
 }
 TARGET_INFORMATION = {
     "ps_mip_complete": "documented targets fixed present; other indicators fixed absent",
@@ -31,6 +38,10 @@ TARGET_INFORMATION = {
     "gnies_present": "documented target union supplied; additional union members learnable",
     "gies_complete": "documented environment-specific target lists treated as complete",
     "igsp_complete": "documented environment-specific target lists treated as complete",
+    "gies_oracle": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+    "utigsp_unknown": "no intervention targets supplied; environment-specific targets learnable; reference remains observational",
+    "igsp_oracle": "oracle documented environment-specific target lists treated as complete; no graph supplied",
+    "gnies_unknown": "no intervention targets or initial union supplied; target union learnable",
 }
 GRAPH_MULTIPLIERS = tuple(2. ** (k / 2) for k in range(-8, 9))
 NATIVE_MULTIPLIERS = tuple(2. ** k for k in range(-4, 11))
@@ -39,12 +50,23 @@ SEED = 20260901
 NATIVE_VARS = ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "VECLIB_MAXIMUM_THREADS")
 SUCCESS = ("ok", "ok_nonoptimal")
 FAILURE = ("failed", "timeout", "watchdog_timeout", "process_failed")
-PROFILE = "scm4_unscreened_1h_v1"
+LEGACY_PROFILE = "scm4_unscreened_1h_v1"
+PROFILE = "scm4_unknown_oracle_1h_v1"
+LEGACY_JOBS = Path("archive/causal_chambers/2026-09-06/known_target_quest_jobs")
+REUSABLE_METHODS = {"ps_mip_unknown": "ps_mip_unknown", "gies_oracle": "gies_complete", "igsp_oracle": "igsp_complete"}
 CORE_FILES = ("src/chamber_data.py", "src/chamber_experiment.py", "experiments/run_chamber_experiment.py",
               "MIP_profiled.py", "MIP.py", "UTIGSP.py", "IGSP.py", "GIES.py",
               "src/utils.py", "src/main_experiment_cli.py", "src/main_experiment_data.py",
               "data/DataGeneration.py", "requirements-chambers.txt",
               *(f"experiments/quest_jobs/chamber_experiment_{m}.sh" for m in METHODS))
+
+# Reviewed predecessors for the historical seven-condition profile only. Its
+# adapter behavior, settings and metrics are preserved by the new method branches.
+# These revisions cannot be used to certify new unknown-target baseline fits.
+POSTPROCESS_COMPATIBLE_SOURCES = {
+    "src/chamber_experiment.py": {"84f4f4633ee0160c8f8de1d05ff14f22e5cc25931a33cb6a5954dd7df6d5071b"},
+    "experiments/run_chamber_experiment.py": {"b711742f68e69657df6d29cf406b15ec1f953391f905550347bd0a4d646bc1ff"},
+}
 
 
 def runtime_identity():
@@ -58,8 +80,20 @@ def runtime_identity():
             "versions": dict(distributions), "package_source_hashes": packages}
 
 
-def implementation_identity():
-    return {name: data.file_hash(data.ROOT / name) for name in CORE_FILES}
+def methods_for_profile(profile):
+    if profile == PROFILE: return METHODS
+    if profile == LEGACY_PROFILE: return LEGACY_METHODS
+    raise ValueError("unknown chamber profile")
+
+
+def implementation_identity(profile=PROFILE):
+    files = [name for name in CORE_FILES if not name.startswith("experiments/quest_jobs/")]
+    output = {name: data.file_hash(data.ROOT / name) for name in files}
+    for method in methods_for_profile(profile):
+        name = f"experiments/quest_jobs/chamber_experiment_{method}.sh"
+        path = LEGACY_JOBS / Path(name).name if profile == LEGACY_PROFILE else Path(name)
+        output[name] = data.file_hash(data.ROOT / path)
+    return output
 
 
 def check_apis():
@@ -82,7 +116,7 @@ def check_apis():
 
 
 def settings(method, sample_sizes):
-    if method not in METHODS: raise ValueError("unknown chamber method")
+    if method not in ALL_METHODS: raise ValueError("unknown chamber method")
     n = sum(sample_sizes)
     base = float(np.log(n) / n)
     if method.startswith("ps_mip"):
@@ -90,7 +124,7 @@ def settings(method, sample_sizes):
                  "graph_penalty": c * base, "target_penalty": [16 * base] * (len(sample_sizes) - 1),
                  "target_penalty_formula": "16*log(N)/N", "environment_weights": (np.asarray(sample_sizes) / n).tolist()}
                 for i, c in enumerate(GRAPH_MULTIPLIERS)]
-    if method in ("gnies_present", "gies_complete"):
+    if method in ("gnies_present", "gies_complete", "gnies_unknown", "gies_oracle"):
         return [{"setting_id": f"native_bic_{i:02d}", "tuning_value": c,
                  "lambda": c * .5 * float(np.log(n))} for i, c in enumerate(NATIVE_MULTIPLIERS)]
     return [{"setting_id": f"alpha_{i:02d}", "tuning_value": alpha, "alpha": alpha,
@@ -154,7 +188,7 @@ def metrics(dag, graph, metadata):
 
 
 def fit_method(job, arrays, documented, bounds, seed=SEED, threads=8):
-    """Never receives the reference graph. Unknown PS-MIP receives no labels."""
+    """Never receives graph truth; unknown-target adapters receive no labels."""
     from src.utils import interventional_cpdag
     method, setting = job["method"], job["setting"]
     p = arrays[0].shape[1]
@@ -193,21 +227,22 @@ def fit_method(job, arrays, documented, bounds, seed=SEED, threads=8):
                      numerical_bounds=b, selected_bound_extrema=extrema, bounds_inactive=inactive)
         representation = "dag_and_i_cpdag"
         preprocessing = "within_environment_centering_and_reference_sd_scaling"
-    elif method in ("utigsp_present", "igsp_complete"):
+    elif method in ("utigsp_present", "igsp_complete", "utigsp_unknown", "igsp_oracle"):
         arguments = {k: setting[k] for k in ("alpha", "alpha_inv", "invariance_test", "depth", "nruns")}
-        if method == "utigsp_present":
+        if method in ("utigsp_present", "utigsp_unknown"):
             from UTIGSP import fit
-            dag, estimated_targets = fit(arrays, known_interventions=documented, seed=seed, **arguments)
+            known = documented if method == "utigsp_present" else None
+            dag, estimated_targets = fit(arrays, known_interventions=known, seed=seed, **arguments)
         else:
             from IGSP import fit
             dag = fit(arrays, documented, seed=seed, **arguments)
             estimated_targets = documented.copy()
         graph = interventional_cpdag(dag, estimated_targets)
         representation, preprocessing = "dag_and_i_cpdag", "common_affine_only_means_retained"
-    elif method == "gnies_present":
+    elif method in ("gnies_present", "gnies_unknown"):
         import gnies
         from gnies.utils import pdag_to_dag
-        known = set(np.flatnonzero(documented.any(axis=0)))
+        known = set(np.flatnonzero(documented.any(axis=0))) if method == "gnies_present" else set()
         score, graph, union = gnies.fit(arrays, approach="greedy", lmbda=setting["lambda"],
                                        center=True, known_targets=known)
         if not known <= set(union): raise ValueError("GnIES dropped a documented target")
@@ -216,7 +251,7 @@ def fit_method(job, arrays, documented, bounds, seed=SEED, threads=8):
         dag = pdag_to_dag(graph)
         extra = {"objective_value": score}
         representation, preprocessing = "i_cpdag_and_deterministic_consistent_extension", "gnies_center_true"
-    elif method == "gies_complete":
+    elif method in ("gies_complete", "gies_oracle"):
         from GIES import fit
         from gies.utils import pdag_to_dag
         graph, score = fit(arrays, documented, lmbda=setting["lambda"], timeout=job["time_limit"])
@@ -236,6 +271,8 @@ def fit_method(job, arrays, documented, bounds, seed=SEED, threads=8):
 def validate_result(row, job, design, allow_failure=False):
     if row["job"] != job or row["design_sha256"] != data.digest(design):
         raise ValueError("mixed or stale result identity")
+    if "reuse" in row:
+        validate_reused_result(row, job, design, allow_failure)
     if row["status"] not in SUCCESS:
         if allow_failure and row["status"] in FAILURE:
             if row["status"] == "timeout" and (job["method"].startswith("ps_mip")
@@ -251,12 +288,12 @@ def validate_result(row, job, design, allow_failure=False):
     estimate = np.asarray(result["estimated_targets"])
     documented = np.asarray(meta["documented_targets"])
     if not np.isin(estimate, (0, 1)).all(): raise ValueError("nonbinary targets")
-    if method == "gnies_present":
-        if estimate.shape != (p,) or np.any(estimate[documented.any(axis=0)] != 1):
+    if method in ("gnies_present", "gnies_unknown"):
+        if estimate.shape != (p,) or (method == "gnies_present" and np.any(estimate[documented.any(axis=0)] != 1)):
             raise ValueError("invalid target union or documented target disappeared")
     else:
         if estimate.shape != documented.shape: raise ValueError("wrong environment target shape")
-        if method in ("ps_mip_complete", "gies_complete", "igsp_complete") and not np.array_equal(estimate, documented):
+        if method in ("ps_mip_complete", "gies_complete", "igsp_complete", "gies_oracle", "igsp_oracle") and not np.array_equal(estimate, documented):
             raise ValueError("complete target lists changed")
         if method in ("ps_mip_present", "utigsp_present") and np.any(estimate[documented == 1] != 1):
             raise ValueError("documented target disappeared")
@@ -264,7 +301,7 @@ def validate_result(row, job, design, allow_failure=False):
         raise ValueError("common input identity mismatch")
     from gies.utils import is_consistent_extension
     if not is_consistent_extension(dag, graph): raise ValueError("inconsistent DAG representative")
-    if method == "gnies_present":
+    if method in ("gnies_present", "gnies_unknown"):
         from gnies.utils import dag_to_icpdag
         recomputed = dag_to_icpdag(dag, set(np.flatnonzero(estimate)))
     else:
@@ -301,7 +338,33 @@ def validate_result(row, job, design, allow_failure=False):
             raise ValueError("uncertified optimality claim")
 
 
-def make_design(data_root=data.DATA_ROOT, threads=8, time_limit=3600):
+def validate_reused_result(row, job, design, allow_failure=False):
+    """A reuse wrapper retains the complete original row and fitting identity."""
+    reuse = row["reuse"]
+    source, original = reuse["source_design"], reuse["source_row"]
+    if (design["profile"] != PROFILE or source["profile"] != LEGACY_PROFILE
+            or job["method"] not in REUSABLE_METHODS or "reuse" in original
+            or reuse["source_row_sha256"] != data.digest(original)):
+        raise ValueError("invalid reuse provenance or non-reusable method")
+    current_code = implementation_identity(LEGACY_PROFILE)
+    if set(source["implementation"]) != set(current_code) or any(
+            saved != current_code[name] and saved not in POSTPROCESS_COMPATIBLE_SOURCES.get(name, set())
+            for name, saved in source["implementation"].items()):
+        raise ValueError("unreviewed implementation in reused fit")
+    original_job = original["job"]
+    if original_job["method"] != REUSABLE_METHODS[job["method"]] or original_job not in source["jobs"]:
+        raise ValueError("incompatible reused method")
+    for key in ("configurations", "seed", "threads", "native_threads", "timing", "screening", "evaluation"):
+        if design[key] != source[key]: raise ValueError(f"reused fit has different {key}")
+    for key in ("configuration", "setting_index", "setting", "time_limit", "data_sha256"):
+        if job[key] != original_job[key]: raise ValueError(f"reused fit has different {key}")
+    omit = {"job", "design_sha256", "reuse"}
+    if {k: v for k, v in row.items() if k not in omit} != {k: v for k, v in original.items() if k not in omit}:
+        raise ValueError("reused fit payload was altered")
+    validate_result(original, original_job, source, allow_failure=allow_failure)
+
+
+def make_design(data_root=data.DATA_ROOT, threads=8, time_limit=3600, profile=PROFILE):
     time_limit = float(time_limit)
     if threads < 1 or not np.isfinite(time_limit) or time_limit <= 0:
         raise ValueError("positive threads and finite positive time limit required")
@@ -309,31 +372,59 @@ def make_design(data_root=data.DATA_ROOT, threads=8, time_limit=3600):
     for cfg in ("scm_4",):
         arrays, metadata, bounds = data.load(cfg, data_root)
         configurations[cfg] = {"data": metadata, "preflight": bounds}
-        for method in METHODS:
+        for method in methods_for_profile(profile):
             for index, setting in enumerate(settings(method, [len(a) for a in arrays])):
                 jobs.append({"index": len(jobs), "configuration": cfg, "method": method,
                     "setting_index": index, "setting": setting, "target_information": TARGET_INFORMATION[method],
                     "time_limit": time_limit,
                     "data_sha256": metadata["data_sha256"],
                     "output": f"{cfg}/parts/{method}/setting_{index + 1:02d}.json"})
-    if len(jobs) != 97 or len({j["output"] for j in jobs}) != 97:
-        raise ValueError("expected 97 unique scm_4 settings")
-    return {"version": 2, "profile": PROFILE,
+    count = 63 if profile == PROFILE else 97
+    if len(jobs) != count or len({j["output"] for j in jobs}) != count:
+        raise ValueError(f"expected {count} unique scm_4 settings")
+    return {"version": 3 if profile == PROFILE else 2, "profile": profile,
             "role": "controlled_physical_hybrid_pilot_not_biological_validation",
             "configurations": configurations, "jobs": jobs, "seed": SEED, "threads": threads,
-            "native_threads": 1, "implementation": implementation_identity(), "runtime": runtime_identity(),
+            "native_threads": 1, "implementation": implementation_identity(profile), "runtime": runtime_identity(),
             "timing": {"fit_limit_seconds": time_limit, "worker_watchdog_seconds": time_limit + 120,
                        "ps_mip_limit_scope": "native solver; startup, precomputation and saving are separate",
                        "baseline_limit_scope": "entire method adapter with interrupt timer"},
             "screening": {"enabled": False, "candidate_pairs": 45, "parent_sets": 5120},
             "failure_statuses": list(FAILURE),
-            "initialization": "fresh worker per fit; no imported fits or warm starts",
+            "initialization": ("fresh worker per fit; no warm starts; explicit provenance-preserving reuse allowed for unchanged PS-MIP/GIES/IGSP"
+                               if profile == PROFILE else "fresh worker per fit; no imported fits or warm starts"),
             "selection_policy": "report all settings; FP budgets 3 and 5 descriptive only; no path promotion",
             "evaluation": "reference DAG counts, no I-CPDAG scoring; deterministic reference-independent extensions",
             "diagnostic_note": "all ten variables and all rows retained regardless of model diagnostics"}
 
 
-def validate_identity(design, data_root=data.DATA_ROOT):
-    if design.get("profile") != PROFILE or design != make_design(
-            data_root, design["threads"], design["timing"]["fit_limit_seconds"]):
+def validate_identity(design, data_root=data.DATA_ROOT, *, postprocess=False):
+    """Fitting is strict; saved-result analysis may use a different runtime.
+
+    Never rewrite the saved manifest: each result must still match its original
+    design hash. The caller must also validate every saved graph and metric.
+    """
+    current = make_design(data_root, design["threads"], design["timing"]["fit_limit_seconds"], design["profile"])
+    provenance = None
+    if postprocess:
+        provenance = {"policy": "saved_results_runtime_portable_v1", "design_sha256": data.digest(design),
+                      "runtime_matches_fit": design["runtime"] == current["runtime"],
+                      "runtime": current["runtime"], "implementation": current["implementation"].copy(),
+                      "accepted_validation_code_revisions": {}}
+        # Runtime/package identities describe how the fits were produced; they
+        # need not describe the machine that later counts edges and draws plots.
+        current["runtime"] = design["runtime"]
+        accepted_sources = POSTPROCESS_COMPATIBLE_SOURCES if design["profile"] == LEGACY_PROFILE else {}
+        for name, accepted in accepted_sources.items():
+            saved = design["implementation"].get(name)
+            if saved != current["implementation"][name] and saved in accepted:
+                provenance["accepted_validation_code_revisions"][name] = {
+                    "saved": saved, "current": current["implementation"][name]}
+                current["implementation"][name] = saved
+    if design != current:
         raise ValueError("stale/incompatible frozen design, code, data, or runtime")
+    if postprocess and not provenance["runtime_matches_fit"]:
+        warnings.warn("Postprocessing runtime differs from the fitting runtime; continuing with saved-graph "
+                      "validation. The original fitting identity is preserved. Fitting/resumption remain strict.",
+                      UserWarning, stacklevel=2)
+    return provenance

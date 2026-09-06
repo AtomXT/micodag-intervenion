@@ -1,0 +1,25 @@
+{
+  "profile": "scm4_unscreened_1h_v1",
+  "planned": 97,
+  "accounted": 97,
+  "all_planned_accounted": true,
+  "all_planned_successful": true,
+  "status_counts": {
+    "ok": 57,
+    "ok_nonoptimal": 40,
+    "failed": 0,
+    "timeout": 0,
+    "watchdog_timeout": 0,
+    "process_failed": 0
+  },
+  "design_sha256": "ab4f487c692a9948753110ae1e1422f53ab6da832d051a2fafc67082bbe0a11d",
+  "postprocessing": {
+    "policy": "saved_results_runtime_portable_v1",
+    "runtime_matches_fit": false,
+    "runtime_sha256": "09c05b348bfe9e1106bfb8a92b433d6395cbd5525f9a5bcc80ad534c3e86e247",
+    "accepted_validation_code_revisions": [
+      "src/chamber_experiment.py",
+      "experiments/run_chamber_experiment.py"
+    ]
+  }
+}

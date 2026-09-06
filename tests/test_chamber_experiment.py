@@ -54,7 +54,7 @@ class ChamberUnitTests(unittest.TestCase):
 
     def test_grid_enumeration_and_penalties(self):
         settings = {m: study.settings(m, [10000] * 4) for m in study.METHODS}
-        self.assertEqual(sum(map(len, settings.values())), 97)
+        self.assertEqual(sum(map(len, settings.values())), 63)
         self.assertEqual(study.GRAPH_MULTIPLIERS[0], 1/16)
         self.assertEqual(study.GRAPH_MULTIPLIERS[-1], 16)
         self.assertEqual(study.NATIVE_MULTIPLIERS[-1], 1024)
@@ -63,7 +63,7 @@ class ChamberUnitTests(unittest.TestCase):
                 if m.startswith("ps_mip"):
                     self.assertAlmostEqual(setting["graph_penalty"], setting["tuning_value"] * np.log(40000)/40000)
                     np.testing.assert_allclose(setting["target_penalty"], [16*np.log(40000)/40000] * 3)
-                elif m in ("utigsp_present", "igsp_complete"):
+                elif m in ("utigsp_unknown", "igsp_oracle"):
                     self.assertEqual(setting["invariance_test"], "gaussian")
                     self.assertEqual(setting["alpha_inv"], 1e-5)
 
@@ -166,6 +166,37 @@ class ChamberUnitTests(unittest.TestCase):
             self.assertEqual(result["screen_parent_sets"], 32)
             self.assertTrue(result["bounds_inactive"])
 
+    def test_unknown_baselines_never_read_or_receive_documented_targets(self):
+        arrays = self.arrays()
+        graph = np.zeros((4, 4), int)
+        inferred = np.zeros((3, 4), int)
+        # A sentinel instead of the labels catches accidental inspection/leakage.
+        labels = object()
+        job = {"method": "utigsp_unknown", "setting": study.settings("utigsp_unknown", [100]*4)[0], "time_limit": 3600}
+        with mock.patch("UTIGSP.fit", return_value=(graph, inferred)) as fit:
+            study.fit_method(job, arrays, labels, {})
+            self.assertIsNone(fit.call_args.kwargs["known_interventions"])
+            self.assertEqual(fit.call_args.kwargs["invariance_test"], "gaussian")
+            self.assertEqual(fit.call_args.kwargs["alpha_inv"], 1e-5)
+        job = {"method": "gnies_unknown", "setting": study.settings("gnies_unknown", [100]*4)[0], "time_limit": 3600}
+        with mock.patch("gnies.fit", return_value=(0., graph, set())) as fit:
+            result = study.fit_method(job, arrays, labels, {})
+            self.assertEqual(fit.call_args.kwargs["known_targets"], set())
+            self.assertNotIn("I0", fit.call_args.kwargs)  # Official empty initial-union default.
+            self.assertTrue(fit.call_args.kwargs["center"])
+            self.assertFalse(result["estimated_targets"].any())
+
+    def test_oracle_adapters_receive_complete_documented_lists(self):
+        arrays, documented = self.arrays(), np.eye(3, 4, dtype=int)
+        graph = np.zeros((4, 4), int)
+        for method, module, returned in (("gies_oracle", "GIES", (graph, 0.)), ("igsp_oracle", "IGSP", graph)):
+            job = {"method": method, "setting": study.settings(method, [100]*4)[0], "time_limit": 3600}
+            with mock.patch(module + ".fit", return_value=returned) as fit:
+                result = study.fit_method(job, arrays, documented, {})
+                np.testing.assert_array_equal(fit.call_args.args[1], documented)
+                np.testing.assert_array_equal(result["estimated_targets"], documented)
+                self.assertIn("oracle", study.LABELS[method])
+
     def test_external_watchdog_kills_only_owned_group(self):
         child = mock.Mock(pid=54321)
         child.wait.side_effect = [subprocess.TimeoutExpired("owned", 1), -9]
@@ -201,8 +232,8 @@ class ChamberIntegrationTests(unittest.TestCase):
         cls.design = study.make_design()
 
     def test_prepared_data_and_design(self):
-        self.assertEqual(len(self.design["jobs"]), 97)
-        self.assertEqual(len({j["output"] for j in self.design["jobs"]}), 97)
+        self.assertEqual(len(self.design["jobs"]), 63)
+        self.assertEqual(len({j["output"] for j in self.design["jobs"]}), 63)
         self.assertEqual(list(self.design["configurations"]), ["scm_4"])
         for cfg in self.design["configurations"]:
             arrays, meta, bounds = data.load(cfg)
@@ -210,16 +241,17 @@ class ChamberIntegrationTests(unittest.TestCase):
             self.assertEqual(sum(map(sum, meta["reference_dag"])), 23)
             self.assertEqual(bounds["parent_sets"], 5120)
             self.assertEqual(bounds["local_optima_checked"], 40960)
-            self.assertEqual(sum(j["configuration"] == cfg for j in self.design["jobs"]), 97)
+            self.assertEqual(sum(j["configuration"] == cfg for j in self.design["jobs"]), 63)
         self.assertLess(data.read_json(data.DATA_ROOT/"source.json")["archive_bytes_read"], 100_000_000)
 
-    def example(self, method="igsp_complete"):
-        job = next(j for j in self.design["jobs"] if j["method"] == method)
-        meta = self.design["configurations"][job["configuration"]]["data"]
+    def example(self, method="igsp_oracle"):
+        design = self.design if method in study.METHODS else study.make_design(profile=study.LEGACY_PROFILE)
+        job = next(j for j in design["jobs"] if j["method"] == method)
+        meta = design["configurations"][job["configuration"]]["data"]
         dag = np.zeros((10, 10), int)
         result = {"estimated_dag": dag, "estimated_graph": dag, "estimated_targets": data.targets(), "fit_seconds": .01,
                   "common_input_sha256_before": job["data_sha256"], "common_input_sha256_after": job["data_sha256"]}
-        return {"job": job, "design_sha256": data.digest(self.design), "status": "ok", "result": result,
+        return {"job": job, "design_sha256": data.digest(design), "status": "ok", "result": result,
                 "timing": {"fit_limit_seconds": job["time_limit"], "budget_overrun_seconds": 0.},
                 "metrics": study.metrics(dag, dag, meta)}
 
@@ -236,10 +268,26 @@ class ChamberIntegrationTests(unittest.TestCase):
 
     def test_additional_present_targets_allowed(self):
         row = self.example("utigsp_present")
+        legacy = study.make_design(profile=study.LEGACY_PROFILE)
         row["result"]["estimated_targets"][0, 8] = 1
-        study.validate_result(row, row["job"], self.design)
+        study.validate_result(row, row["job"], legacy)
         row["result"]["estimated_targets"][0, 0] = 0
-        with self.assertRaises(ValueError): study.validate_result(row, row["job"], self.design)
+        with self.assertRaises(ValueError): study.validate_result(row, row["job"], legacy)
+
+    def test_unknown_results_may_omit_documented_targets(self):
+        for method in ("utigsp_unknown", "gnies_unknown"):
+            row = self.example(method)
+            row["result"]["estimated_targets"] = np.zeros(10 if method.startswith("gnies") else (3, 10), int)
+            study.validate_result(row, row["job"], self.design)
+
+    def test_old_supplied_target_results_cannot_be_new_main_comparison(self):
+        from src.chamber_plotting import export_main_comparison
+        legacy = study.make_design(profile=study.LEGACY_PROFILE)
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            with self.assertRaisesRegex(ValueError, "genuinely unknown-target"):
+                export_main_comparison(root, legacy, [])
+            self.assertEqual(list(root.iterdir()), [])
 
     def test_missing_fragments_and_failures_not_presented_as_success(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -308,7 +356,38 @@ class ChamberPlotTests(unittest.TestCase):
         result = summarize({"jobs": jobs}, [])
         self.assertFalse(result["all_planned_accounted"])
         self.assertFalse(result["all_planned_successful"])
-        self.assertIsNone(result["configurations"]["scm_4"]["ps_mip_complete"]["best_at_directed_fp_budget"]["3"])
+        self.assertIsNone(result["configurations"]["scm_4"]["ps_mip_unknown"]["best_at_directed_fp_budget"]["3"])
+
+    def test_main_comparison_keeps_only_unknown_ps_mip_and_discloses_information(self):
+        from src.chamber_plotting import MAIN_METHODS, path_figure
+        import matplotlib.pyplot as plt
+        self.assertEqual(MAIN_METHODS, study.METHODS)
+        rows = []
+        for method in study.METHODS:
+            row = copy.deepcopy(self.rows()[0])
+            row["job"]["method"] = method
+            rows.append(row)
+        before = copy.deepcopy(rows)
+        summary = {"configurations": {"scm_4": {m: {"planned": 1} for m in study.METHODS}}}
+        fig = path_figure("scm_4", rows, MAIN_METHODS, "sparse", summary, main_comparison=True)
+        labels = [t.get_text() for t in fig.legends[0].get_texts()]
+        self.assertEqual(len(labels), 5)
+        self.assertEqual([s for s in labels if s.startswith("PS-MIP")], ["PS-MIP: unknown targets"])
+        self.assertIn("GIES (oracle)", labels)
+        self.assertIn("IGSP (oracle)", labels)
+        texts = "\n".join(t.get_text() for t in fig.texts)
+        self.assertIn("5/5 successful fits", texts)
+        self.assertIn("Targets withheld from PS-MIP, UT-IGSP and GnIES", texts)
+        self.assertEqual(len(fig.axes[0].collections), 5)
+        self.assertEqual(rows, before)
+        plt.close(fig)
+
+    def test_main_comparison_grid_is_a_display_subset_not_a_new_design(self):
+        from src.chamber_plotting import MAIN_METHODS
+        counts = {m: len(study.settings(m, [10000] * 4)) for m in study.METHODS}
+        self.assertEqual(sum(counts.values()), 63)
+        self.assertEqual(sum(counts[m] for m in MAIN_METHODS), 63)
+        self.assertEqual(counts["ps_mip_unknown"], 17)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,332 @@
+{
+  "planned": 97,
+  "accounted": 97,
+  "all_planned_accounted": true,
+  "all_planned_successful": true,
+  "design_sha256": "ab4f487c692a9948753110ae1e1422f53ab6da832d051a2fafc67082bbe0a11d",
+  "configurations": {
+    "scm_4": {
+      "ps_mip_complete": {
+        "planned": 17,
+        "accounted": 17,
+        "successful": 17,
+        "status_counts": {
+          "ok": 11,
+          "ok_nonoptimal": 6,
+          "failed": 0,
+          "timeout": 0,
+          "watchdog_timeout": 0,
+          "process_failed": 0
+        },
+        "outside_25_fp": {
+          "directed": 0,
+          "skeleton": 0
+        },
+        "minimum_directed_fp": 4,
+        "best_at_directed_fp_budget": {
+          "3": null,
+          "5": {
+            "job_index": 14,
+            "setting": {
+              "setting_id": "graph_14_target_fixed16",
+              "tuning_value": 8.0,
+              "graph_penalty": 0.0021193269466192144,
+              "target_penalty": [
+                0.004238653893238429,
+                0.004238653893238429,
+                0.004238653893238429
+              ],
+              "target_penalty_formula": "16*log(N)/N",
+              "environment_weights": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ]
+            },
+            "metrics": {
+              "directed_tp": 23,
+              "directed_fp": 4,
+              "directed_fn": 0,
+              "directed_tn": 63,
+              "directed_tpr": 1.0,
+              "directed_fpr": 0.05970149253731343,
+              "skeleton_tp": 23,
+              "skeleton_fp": 4,
+              "skeleton_fn": 0,
+              "skeleton_tn": 18,
+              "skeleton_tpr": 1.0,
+              "skeleton_fpr": 0.18181818181818182,
+              "ambiguous_undirected_edges": 2,
+              "directed_tp_ambiguous_in_returned_graph": 0,
+              "directed_fp_ambiguous_in_returned_graph": 2,
+              "physical_directed_tp": 21,
+              "physical_skeleton_tp": 21,
+              "physical_reversed": 0,
+              "programmed_directed_tp": 2,
+              "programmed_skeleton_tp": 2,
+              "programmed_reversed": 0
+            },
+            "status": "ok"
+          }
+        },
+        "elapsed_seconds": 43735.5826238743
+      },
+      "ps_mip_present": {
+        "planned": 17,
+        "accounted": 17,
+        "successful": 17,
+        "status_counts": {
+          "ok": 0,
+          "ok_nonoptimal": 17,
+          "failed": 0,
+          "timeout": 0,
+          "watchdog_timeout": 0,
+          "process_failed": 0
+        },
+        "outside_25_fp": {
+          "directed": 0,
+          "skeleton": 0
+        },
+        "minimum_directed_fp": 4,
+        "best_at_directed_fp_budget": {
+          "3": null,
+          "5": {
+            "job_index": 31,
+            "setting": {
+              "setting_id": "graph_14_target_fixed16",
+              "tuning_value": 8.0,
+              "graph_penalty": 0.0021193269466192144,
+              "target_penalty": [
+                0.004238653893238429,
+                0.004238653893238429,
+                0.004238653893238429
+              ],
+              "target_penalty_formula": "16*log(N)/N",
+              "environment_weights": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ]
+            },
+            "metrics": {
+              "directed_tp": 23,
+              "directed_fp": 4,
+              "directed_fn": 0,
+              "directed_tn": 63,
+              "directed_tpr": 1.0,
+              "directed_fpr": 0.05970149253731343,
+              "skeleton_tp": 23,
+              "skeleton_fp": 4,
+              "skeleton_fn": 0,
+              "skeleton_tn": 18,
+              "skeleton_tpr": 1.0,
+              "skeleton_fpr": 0.18181818181818182,
+              "ambiguous_undirected_edges": 2,
+              "directed_tp_ambiguous_in_returned_graph": 0,
+              "directed_fp_ambiguous_in_returned_graph": 2,
+              "physical_directed_tp": 21,
+              "physical_skeleton_tp": 21,
+              "physical_reversed": 0,
+              "programmed_directed_tp": 2,
+              "programmed_skeleton_tp": 2,
+              "programmed_reversed": 0
+            },
+            "status": "ok_nonoptimal"
+          }
+        },
+        "elapsed_seconds": 61397.27499084361
+      },
+      "ps_mip_unknown": {
+        "planned": 17,
+        "accounted": 17,
+        "successful": 17,
+        "status_counts": {
+          "ok": 0,
+          "ok_nonoptimal": 17,
+          "failed": 0,
+          "timeout": 0,
+          "watchdog_timeout": 0,
+          "process_failed": 0
+        },
+        "outside_25_fp": {
+          "directed": 0,
+          "skeleton": 0
+        },
+        "minimum_directed_fp": 4,
+        "best_at_directed_fp_budget": {
+          "3": null,
+          "5": {
+            "job_index": 48,
+            "setting": {
+              "setting_id": "graph_14_target_fixed16",
+              "tuning_value": 8.0,
+              "graph_penalty": 0.0021193269466192144,
+              "target_penalty": [
+                0.004238653893238429,
+                0.004238653893238429,
+                0.004238653893238429
+              ],
+              "target_penalty_formula": "16*log(N)/N",
+              "environment_weights": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ]
+            },
+            "metrics": {
+              "directed_tp": 23,
+              "directed_fp": 4,
+              "directed_fn": 0,
+              "directed_tn": 63,
+              "directed_tpr": 1.0,
+              "directed_fpr": 0.05970149253731343,
+              "skeleton_tp": 23,
+              "skeleton_fp": 4,
+              "skeleton_fn": 0,
+              "skeleton_tn": 18,
+              "skeleton_tpr": 1.0,
+              "skeleton_fpr": 0.18181818181818182,
+              "ambiguous_undirected_edges": 2,
+              "directed_tp_ambiguous_in_returned_graph": 0,
+              "directed_fp_ambiguous_in_returned_graph": 2,
+              "physical_directed_tp": 21,
+              "physical_skeleton_tp": 21,
+              "physical_reversed": 0,
+              "programmed_directed_tp": 2,
+              "programmed_skeleton_tp": 2,
+              "programmed_reversed": 0
+            },
+            "status": "ok_nonoptimal"
+          }
+        },
+        "elapsed_seconds": 61546.37756971829
+      },
+      "utigsp_present": {
+        "planned": 8,
+        "accounted": 8,
+        "successful": 8,
+        "status_counts": {
+          "ok": 8,
+          "ok_nonoptimal": 0,
+          "failed": 0,
+          "timeout": 0,
+          "watchdog_timeout": 0,
+          "process_failed": 0
+        },
+        "outside_25_fp": {
+          "directed": 0,
+          "skeleton": 0
+        },
+        "minimum_directed_fp": 7,
+        "best_at_directed_fp_budget": {
+          "3": null,
+          "5": null
+        },
+        "elapsed_seconds": 4.893422668799758
+      },
+      "gnies_present": {
+        "planned": 15,
+        "accounted": 15,
+        "successful": 15,
+        "status_counts": {
+          "ok": 15,
+          "ok_nonoptimal": 0,
+          "failed": 0,
+          "timeout": 0,
+          "watchdog_timeout": 0,
+          "process_failed": 0
+        },
+        "outside_25_fp": {
+          "directed": 0,
+          "skeleton": 0
+        },
+        "minimum_directed_fp": 6,
+        "best_at_directed_fp_budget": {
+          "3": null,
+          "5": null
+        },
+        "elapsed_seconds": 1027.6486634016037
+      },
+      "gies_complete": {
+        "planned": 15,
+        "accounted": 15,
+        "successful": 15,
+        "status_counts": {
+          "ok": 15,
+          "ok_nonoptimal": 0,
+          "failed": 0,
+          "timeout": 0,
+          "watchdog_timeout": 0,
+          "process_failed": 0
+        },
+        "outside_25_fp": {
+          "directed": 0,
+          "skeleton": 0
+        },
+        "minimum_directed_fp": 4,
+        "best_at_directed_fp_budget": {
+          "3": null,
+          "5": {
+            "job_index": 81,
+            "setting": {
+              "setting_id": "native_bic_07",
+              "tuning_value": 8.0,
+              "lambda": 42.38653893238429
+            },
+            "metrics": {
+              "directed_tp": 23,
+              "directed_fp": 4,
+              "directed_fn": 0,
+              "directed_tn": 63,
+              "directed_tpr": 1.0,
+              "directed_fpr": 0.05970149253731343,
+              "skeleton_tp": 23,
+              "skeleton_fp": 4,
+              "skeleton_fn": 0,
+              "skeleton_tn": 18,
+              "skeleton_tpr": 1.0,
+              "skeleton_fpr": 0.18181818181818182,
+              "ambiguous_undirected_edges": 2,
+              "directed_tp_ambiguous_in_returned_graph": 0,
+              "directed_fp_ambiguous_in_returned_graph": 2,
+              "physical_directed_tp": 21,
+              "physical_skeleton_tp": 21,
+              "physical_reversed": 0,
+              "programmed_directed_tp": 2,
+              "programmed_skeleton_tp": 2,
+              "programmed_reversed": 0
+            },
+            "status": "ok"
+          }
+        },
+        "elapsed_seconds": 14.08346767933108
+      },
+      "igsp_complete": {
+        "planned": 8,
+        "accounted": 8,
+        "successful": 8,
+        "status_counts": {
+          "ok": 8,
+          "ok_nonoptimal": 0,
+          "failed": 0,
+          "timeout": 0,
+          "watchdog_timeout": 0,
+          "process_failed": 0
+        },
+        "outside_25_fp": {
+          "directed": 0,
+          "skeleton": 0
+        },
+        "minimum_directed_fp": 7,
+        "best_at_directed_fp_budget": {
+          "3": null,
+          "5": null
+        },
+        "elapsed_seconds": 1.593015861697495
+      }
+    }
+  }
+}

@@ -18,7 +18,16 @@ from src import chamber_experiment as study
 
 COLORS = ("#0072B2", "#D55E00", "#8B5AA4", "#E69F00", "#009E73", "#333333", "#CC79A7")
 MARKERS = ("o", "s", "D", "^", "v", "P", "X")
-STYLE = dict(zip(study.METHODS, zip(COLORS, MARKERS)))
+STYLE = dict(zip(study.LEGACY_METHODS, zip(COLORS, MARKERS)))
+for current, legacy in (("gies_oracle", "gies_complete"), ("igsp_oracle", "igsp_complete"),
+                        ("utigsp_unknown", "utigsp_present"), ("gnies_unknown", "gnies_present")):
+    STYLE[current] = STYLE[legacy]
+MAIN_METHODS = study.METHODS
+MAIN_LABELS = study.LABELS
+
+
+def method_order(design):
+    return tuple(dict.fromkeys(j["method"] for j in design["jobs"]))
 
 
 def configurations(design):
@@ -47,7 +56,7 @@ def summarize(design, rows):
               "design_sha256": data.digest(design), "configurations": {}}
     for cfg in configurations(design):
         methods = {}
-        for method in study.METHODS:
+        for method in method_order(design):
             path = [r for r in rows if r["job"]["configuration"] == cfg and r["job"]["method"] == method]
             valid = [r for r in path if r["status"] in study.SUCCESS]
             best = {}
@@ -97,17 +106,21 @@ def plot_panels(axes, rows, methods, view):
         ax.spines[["top", "right"]].set_visible(False)
 
 
-def legend(fig, methods, y=.035):
+def legend(fig, methods, y=.035, labels=None):
+    labels = study.LABELS if labels is None else labels
     handles = [Line2D([], [], linestyle="none", marker=STYLE[m][1], markerfacecolor="none",
-                      markeredgecolor=STYLE[m][0], markersize=7, label=study.LABELS[m]) for m in methods]
+                      markeredgecolor=STYLE[m][0], markersize=7, label=labels[m]) for m in methods]
     fig.legend(handles=handles, loc="lower center", bbox_to_anchor=(.5, y), ncol=2,
                frameon=False, fontsize=9, handletextpad=.5, columnspacing=2.2)
 
 
-def path_figure(cfg, rows, methods, view, summary):
+def path_figure(cfg, rows, methods, view, summary, *, main_comparison=False):
     fig, axes = plt.subplots(1, 2, figsize=(10.5, 6.2))
     fig.subplots_adjust(left=.08, right=.965, bottom=.33, top=.81, wspace=.28)
     plot_panels(axes, rows, methods, view)
+    if main_comparison:
+        for ax in axes:
+            ax.set_title(ax.get_title(), fontsize=12, pad=10)
     configuration = "Actuator chain" if cfg == "scm_4" else "Actuator collider"
     fig.suptitle(f"Causal Chambers | {configuration} ({cfg})", fontsize=16, y=.97)
     count = len([r for r in rows if r["status"] in study.SUCCESS and r["job"]["method"] in methods])
@@ -116,7 +129,11 @@ def path_figure(cfg, rows, methods, view, summary):
              ha="center", fontsize=10)
     detail = "Full-range normalized paths" if view == "rates" else "0-25 FP viewing window; other points remain in full results" if view == "sparse" else "Full-range paths; every successful operating point retained"
     fig.text(.5, .865, detail, ha="center", fontsize=9, color="#555555")
-    legend(fig, methods, y=.048)
+    legend(fig, methods, y=.075 if main_comparison else .048,
+           labels=MAIN_LABELS if main_comparison else None)
+    if main_comparison:
+        fig.text(.5, .055, "Targets withheld from PS-MIP, UT-IGSP and GnIES; supplied to GIES and IGSP (oracle).",
+                 fontsize=8, ha="center", color="#555555")
     fig.text(.5, .025, "Unconnected settings; overlaps retained. Cross inside a marker = feasible but nonoptimal PS-MIP.",
              fontsize=8, ha="center", color="#555555")
     return fig
@@ -125,20 +142,21 @@ def path_figure(cfg, rows, methods, view, summary):
 def overview(rows, summary):
     configs = tuple(summary["configurations"])
     single = len(configs) == 1
+    methods = tuple(summary["configurations"][configs[0]])
     fig, axes = plt.subplots(len(configs), 2, figsize=(10.5, 6.2 if single else 9.3), squeeze=False)
     fig.subplots_adjust(left=.08, right=.965, top=.76 if single else .83,
                         bottom=.33 if single else .225, hspace=.65, wspace=.27)
     for cfg, row_axes in zip(configs, axes):
         selected = [r for r in rows if r["job"]["configuration"] == cfg]
-        plot_panels(row_axes, selected, study.METHODS, "full")
+        plot_panels(row_axes, selected, methods, "full")
         fig.text(.08, row_axes[0].get_position().y1 + .065,
                  "Actuator chain (scm_4)" if cfg == "scm_4" else "Actuator collider (scm_5)",
                  fontsize=12, weight="bold")
-    fig.suptitle("Causal Chambers: seven-condition pilot", fontsize=17, y=.98)
+    fig.suptitle(f"Causal Chambers: {len(methods)}-condition comparison", fontsize=17, y=.98)
     good = sum(r["status"] in study.SUCCESS for r in rows)
     fig.text(.5, .92 if single else .94, f"{good}/{summary['planned']} successful fits | 40,000 observations per configuration | no rank transformation",
              ha="center", fontsize=10)
-    legend(fig, study.METHODS, y=.04)
+    legend(fig, methods, y=.04)
     fig.text(.5, .015, "Reference: 21 physical + 2 programmed links. Full paths; no lines, envelope, or AUC.", ha="center", fontsize=9)
     return fig
 
@@ -173,6 +191,10 @@ def export_csv(path, rows):
                   "setting_index": job["setting_index"], "setting_id": job["setting"]["setting_id"],
                   "tuning_value": job["setting"]["tuning_value"], "status": row["status"],
                   "elapsed_seconds": row["elapsed_seconds"], **row.get("metrics", {})}
+        record["reused"] = "reuse" in row
+        record["source_design_sha256"] = (data.digest(row["reuse"]["source_design"]) if "reuse" in row
+                                           else row.get("design_sha256"))
+        record["source_method"] = row["reuse"]["source_row"]["job"]["method"] if "reuse" in row else job["method"]
         result = row.get("result", {})
         if row["status"] in study.SUCCESS:
             record["estimated_target_count"] = int(np.asarray(result["estimated_targets"]).sum())
@@ -204,7 +226,7 @@ def write_report(path, design, rows, summary, diagnostics):
     for cfg in configurations(design):
         lines += [f"### {cfg}", "", "| Method | FP <= 3 | FP <= 5 | Minimum directed FP | Successful/planned |",
                   "|---|---|---|---:|---:|"]
-        for method in study.METHODS:
+        for method in method_order(design):
             item = summary["configurations"][cfg][method]
             cells = []
             for budget in ("3", "5"):
@@ -219,7 +241,7 @@ def write_report(path, design, rows, summary, diagnostics):
         lines += ["", "Physical versus programmed recovery at the descriptive FP <= 5 points:", "",
                   "| Method | Physical directed TP / 21 | Programmed directed TP / 2 | Directed TP with ambiguous orientation |",
                   "|---|---:|---:|---:|"]
-        for method in study.METHODS:
+        for method in method_order(design):
             point = summary["configurations"][cfg][method]["best_at_directed_fp_budget"]["5"]
             if point is not None:
                 m = point["metrics"]
@@ -257,7 +279,7 @@ def write_report(path, design, rows, summary, diagnostics):
         "| Configuration | Method | Directed outside | Skeleton outside |",
         "|---|---|---:|---:|"]
     for cfg in configurations(design):
-        for method in study.METHODS:
+        for method in method_order(design):
             outside = summary["configurations"][cfg][method]["outside_25_fp"]
             lines.append(f"| {cfg} | {study.LABELS[method]} | {outside['directed']} | {outside['skeleton']} |")
     failures = [r for r in rows if r["status"] not in study.SUCCESS]
@@ -265,12 +287,13 @@ def write_report(path, design, rows, summary, diagnostics):
     lines += ([f"- Job {r['job']['index']}: {r['job']['configuration']} / {r['job']['method']} / {r['job']['setting']['setting_id']}: {r['status']}" for r in failures] or ["No failed fits among the accounted results."])
     lines += [f"Nonoptimal feasible PS-MIP fits: {sum(r['status'] == 'ok_nonoptimal' for r in rows)}.", "",
         "## Runtime and solver diagnostics", "",
-        "All fits start fresh. Times below include accounted failures; missing fits are not counted as zero-runtime successes. "
+        f"Reused fits: {sum('reuse' in r for r in rows)}; these retain their original runtime and solver records, not newly incurred compute. "
+        "New fits start fresh. Times below include accounted failures; missing fits are not counted as zero-runtime successes. "
         "PS-MIP optimality is certification within the numerical tolerance, not a guarantee of correct causal recovery.", "",
         "| Configuration | Method | Successful / planned | Certified PS-MIP | Nonoptimal | Failed / timed out | Worker minutes | Median / maximum PS-MIP gap (%) |",
         "|---|---|---:|---:|---:|---:|---:|---|"]
     for cfg in configurations(design):
-        for method in study.METHODS:
+        for method in method_order(design):
             selected = [r for r in rows if r["job"]["configuration"] == cfg and r["job"]["method"] == method]
             valid = [r for r in selected if r["status"] in study.SUCCESS]
             gaps = [100*r["result"]["mip_gap"] for r in valid if "mip_gap" in r.get("result", {})]
@@ -297,6 +320,43 @@ def write_report(path, design, rows, summary, diagnostics):
     path.write_text("\n".join(lines))
 
 
+def export_main_comparison(root, design, rows, allow_partial=False):
+    """Export the unknown/oracle comparison, never relabel known-target fits."""
+    if design["profile"] != study.PROFILE or method_order(design) != MAIN_METHODS:
+        raise ValueError("main comparison requires the unknown/oracle design and genuinely unknown-target baselines")
+    destination = root / ("summary_preview" if allow_partial else "summary")
+    destination.mkdir(parents=True, exist_ok=True)
+    selected = [r for r in rows if r["job"]["method"] in MAIN_METHODS]
+    summary = summarize(design, rows)
+    planned = sum(j["method"] in MAIN_METHODS for j in design["jobs"])
+    export_csv(destination / "main_operating_points.csv", selected)
+    output_names = ["main_operating_points.csv", "causal_chambers_main.pdf"]
+    plt.rcParams.update({"font.family": "DejaVu Sans", "pdf.fonttype": 42, "ps.fonttype": 42})
+    with PdfPages(destination / "causal_chambers_main.pdf") as pdf:
+        for cfg in configurations(design):
+            cfg_rows = [r for r in selected if r["job"]["configuration"] == cfg]
+            for view in ("full", "sparse", "rates"):
+                fig = path_figure(cfg, cfg_rows, MAIN_METHODS, view, summary, main_comparison=True)
+                if allow_partial:
+                    fig.text(.5, .995, "INCOMPLETE PREVIEW", ha="center", va="top", fontsize=8, color="red")
+                name = f"{cfg}_five_method_{view}.png"
+                fig.savefig(destination / name, dpi=180)
+                pdf.savefig(fig)
+                plt.close(fig)
+                output_names.append(name)
+    identity = {"design_sha256": data.digest(design), "plot_code_sha256": data.file_hash(__file__),
+        "methods": list(MAIN_METHODS), "planned_displayed": planned, "accounted_displayed": len(selected),
+        "planned_full_experiment": len(design["jobs"]), "accounted_full_experiment": len(rows),
+        "target_information": {m: study.TARGET_INFORMATION[m] for m in MAIN_METHODS},
+        "reused_fits": sum("reuse" in r for r in selected),
+        "presentation_policy": "unknown targets when supported, oracle target lists otherwise; all operating points retained",
+        "interpretation": "targets deliberately withheld from PS-MIP, UT-IGSP and GnIES; documented target lists supplied to GIES/IGSP as oracle; observational reference remains identified; no graph supplied",
+        "result_files": {r["job"]["output"]: data.file_hash(root / r["job"]["output"]) for r in selected},
+        "export_files": {name: data.file_hash(destination / name) for name in output_names}}
+    data.write_json(destination / "main_comparison_identity.json", identity)
+    return identity
+
+
 def export(root, data_root, design, rows, allow_partial=False):
     """Caller holds the run lock and has already validated every supplied row."""
     summary = summarize(design, rows)
@@ -320,10 +380,14 @@ def export(root, data_root, design, rows, allow_partial=False):
         save(overview(rows, summary), "causal_chambers_overview")
         for cfg in configs:
             selected = [r for r in rows if r["job"]["configuration"] == cfg]
-            for group, methods in (("seven_condition", study.METHODS), ("ps_mip_only", study.METHODS[:3])):
+            all_methods = method_order(design)
+            group_name = "seven_condition" if design["profile"] == study.LEGACY_PROFILE else "five_condition"
+            for group, methods in ((group_name, all_methods), ("ps_mip_only", tuple(m for m in all_methods if m.startswith("ps_mip")))):
                 for view in ("full", "sparse", "rates"):
                     save(path_figure(cfg, selected, methods, view, summary), f"{cfg}_{group}_{view}")
             save(diagnostic_figure(cfg, diagnostics[cfg]), f"{cfg}_residual_diagnostics")
+    if design["profile"] == study.PROFILE:
+        export_main_comparison(root, design, rows, allow_partial)
     data.write_json(destination/"export_identity.json", {"design_sha256": data.digest(design),
         "plot_code_sha256": data.file_hash(__file__), "result_files": {r["job"]["output"]: data.file_hash(root/r["job"]["output"]) for r in rows},
         "export_files": {p.name: data.file_hash(p) for p in destination.iterdir() if p.is_file() and p.name != "export_identity.json"}})
